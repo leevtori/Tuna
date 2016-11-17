@@ -52,6 +52,7 @@ def getMinimalCover(left, right):
     for i in range(len(left)):
         oldFD.append(left[i]+'->'+right[i])
     print oldFD
+    
     #step 1: right hand side singleton
     for j in range(len(right)):
         if len(right[j])> 1:
@@ -62,7 +63,7 @@ def getMinimalCover(left, right):
     print 'singleton',singleton
     
     #step 2: left hand side extraneous attributes
-    redudancy('C', singleton)
+    redundancy('C', singleton)
     return
 
 
@@ -77,28 +78,37 @@ def redundancy(attribute, fd):
     print 'left',left
     print 'right',right
     #we call closure in here
-    closure(left, right, fd, attribute)
+    closure_list = [attribute]
+    closure(left, right, attribute, closure_list)
+    print "from redudancy", closure_list
     return 
 
     
-def closure(l, r, fd, attibute):
-    
-    #base case: find any fds that start with this attribute
-    closure = [attribute]
+def closure(l, r, attribute, closure_list):
+    #initialize closure to list with the attribute
     for i in range(len(l)):
         if attribute == l[i]:
             #check if attribute already exists
-            for a in closure:
+            for a in closure_list:
                 if a== r[i]:
                     continue
                 else:
-                    closure.append(r[i])
+                    closure_list.append(r[i])
+    print "closure of C", closure_list
     
-    print "closure of c", closure
+    k=1    
+    while k < len(closure_list):
+        closure(l,r, closure_list[k], closure_list) 
+        k+=1
+        
+            
+    
+        
     
 ############################
 #         MAIN             #
-############################   
+############################  
+# spits the fd into 2 lists
 L,R = connectDatabase()
 print "LHS",L
 print "RHS", R
