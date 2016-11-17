@@ -1,4 +1,7 @@
 import sqlite3
+import itertools
+from collections import OrderedDict
+
 
 conn = sqlite3.connect('MiniProject2-InputExample.db')
 c = conn.cursor()
@@ -80,29 +83,42 @@ def redundancy(attribute, fd):
     #we call closure in here
     closure_list = [attribute]
     closure(left, right, attribute, closure_list)
-    print "from redudancy", closure_list
+    close = eliminate_dupes(closure_list)
+    print "C's closure: ", close
+    
     return 
 
     
 def closure(l, r, attribute, closure_list):
     #initialize closure to list with the attribute
+    close = [attribute]
     for i in range(len(l)):
         if attribute == l[i]:
             #check if attribute already exists
-            for a in closure_list:
+            for a in close:
                 if a== r[i]:
                     continue
                 else:
-                    closure_list.append(r[i])
-    print "closure of C", closure_list
+                    close.append(r[i])
+    closure_list.append(close)
+    #print "closure of c", close
+    #print "all", closure_list
     
     k=1    
-    while k < len(closure_list):
-        closure(l,r, closure_list[k], closure_list) 
+    while k < len(close):
+        closure(l,r, close[k], closure_list) 
         k+=1
         
-            
+
+def eliminate_dupes(closure_list):
+    one =  list(itertools.chain.from_iterable(closure_list))
+    one = set(one)
+    one = list(one)
+    one = ''.join(one)
+    return one
     
+    
+        
         
     
 ############################
