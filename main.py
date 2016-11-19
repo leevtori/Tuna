@@ -45,50 +45,97 @@ def connectDatabase():
     for i in range(len(rhs)):
         for j in range(len(rhs[i])):
             RHS.append(''.join(str(rhs[i][j]).split(',')))
-    #print 'RHS',RHS  
     
     return LHS,RHS
 
 def getMinimalCover(left, right):
-    oldFD = []#list of FD strings
-    singleton= []
-    for i in range(len(left)):
-        oldFD.append(left[i]+'->'+right[i])
-    print oldFD
-    
     #step 1: right hand side singleton
-    for j in range(len(right)):
-        if len(right[j])> 1:
-            for letter in range(len(right[j])):
-                singleton.append(left[j]+'->'+right[j][letter])
-        else:
-            singleton.append(left[j]+'->'+right[j])
-    print 'singleton',singleton
+    l, r = getSingleton(left, right)
     
     #step 2: left hand side extraneous attributes
-    redundancy('C', singleton)
-    return
-
-
-def redundancy(attribute, fd):
-    #split into left and right
-    left=[]
-    right=[]
-    for i in range(len(fd)):
-        splitFD = fd[i].split('->')
-        left.append(splitFD[0])
-        right.append(splitFD[1])
-    print 'left',left
-    print 'right',right
-    #we call closure in here
-    closure_list = [attribute]
-    closure(left, right, attribute, closure_list)
-    close = eliminate_dupes(closure_list)
-    print "C's closure: ", close
+    step2(l, r)
     
-    return 
 
+def getSingleton(oldLeft, oldRight):
+    singleton = []
+    for i in range(len(oldRight)):
+        if len(oldRight[i])> 1:    
+            for letter in range(len(oldRight[i])):
+                singleton.append(oldLeft[i]+'->'+oldRight[i][letter])
+        else:
+            singleton.append(oldLeft[i]+'->'+oldRight[i])
+    print 'singleton LIST',singleton
     
+    # turn into list of sets
+    newLeft = []
+    newRight=[]
+    
+    for i in range(len(singleton)):
+        splitFD = singleton[i].split('->')
+        #we get new lists 
+        newLeft.append(splitFD[0])
+        newRight.append(splitFD[1])
+        
+    for j in range(len(newLeft)):
+        s = set()
+        for letter in newLeft[j]:
+            s.add(letter)
+        newLeft[j] = s
+        sr = set()
+        for l in newRight[j]:
+            sr.add(l)
+        newRight[j]= sr
+    #print newLeft
+    #print newRight
+    return newLeft, newRight
+       
+       
+def step2(L_list, R_list):
+    for attribute in L_list:
+        if len(attribute)>1:
+            remove_redundancy(attribute, L_list, R_list)
+    
+        
+def remove_redundancy(attribute, l, r):
+    print attribute
+    for letter in attribute:
+        attri = attribute.difference(letter)
+        #print attri
+        getClosure(attri, l, r)
+        
+def getClosure(attri, l, r):
+    # adds the clos
+    closure_set = set()
+    addtoset(attri, closure_set)
+    
+    print "close",closure_set
+
+         
+    f = 0
+    print len(1)-1
+    while f<(len(l))-1:
+        
+        if l[f].issubset(closure_set):
+            addtoset(r[f],closure_set)
+            f = 0
+        else :
+            f += 1
+    print closure_set
+           
+def addtoset(set1,set2):
+    for letter in set1:
+        set2.add(letter)
+           
+                   
+
+#def redundancy(attribute, fd):
+
+    ##we call closure in here
+    #closure_list = [attribute]
+    #closure(left, right, attribute, closure_list)
+    #close = eliminate_dupes(closure_list)
+    #print attribute+" closure: ", close
+
 def closure(l, r, attribute, closure_list):
     #initialize closure to list with the attribute
     close = [attribute]
@@ -101,8 +148,8 @@ def closure(l, r, attribute, closure_list):
                 else:
                     close.append(r[i])
     closure_list.append(close)
-    #print "closure of c", close
-    #print "all", closure_list
+    print "closure of c", close
+    print "all", closure_list
     
     k=1    
     while k < len(close):
@@ -110,12 +157,12 @@ def closure(l, r, attribute, closure_list):
         k+=1
         
 
-def eliminate_dupes(closure_list):
-    one =  list(itertools.chain.from_iterable(closure_list))
-    one = set(one)
-    one = list(one)
-    one = ''.join(one)
-    return one
+#def eliminate_dupes(closure_list):
+    #one =  list(itertools.chain.from_iterable(closure_list))
+    #one = set(one)
+    #one = list(one)
+    #one = ''.join(one)
+    #return one
     
     
         
@@ -126,10 +173,11 @@ def eliminate_dupes(closure_list):
 ############################  
 # spits the fd into 2 lists
 L,R = connectDatabase()
-print "LHS",L
-print "RHS", R
 
 getMinimalCover(L,R)
+
+
+
 
 
 
