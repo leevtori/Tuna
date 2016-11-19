@@ -36,11 +36,11 @@ def connectDatabase():
     # get LHS
     c.execute("select LHS from Input_FDs_R1;")
     lhs = c.fetchall()
-    ##LHS = []
+    LHS = []
     for i in range(len(lhs)):
         for j in range(len(lhs[i])):
-            l_list.append(''.join(str(lhs[i][j]).split(',')))
-    print 'LHS',LHS
+            LHS.append(''.join(str(lhs[i][j]).split(',')))
+    #print 'LHS',LHS
     #get RHS
     c.execute("select RHS from Input_FDs_R1;")
     rhs = c.fetchall()
@@ -51,80 +51,71 @@ def connectDatabase():
     
     return LHS,RHS
 
-def getMinimalCover(left, right):
+def getMinimalCover():
     #step 1: right hand side singleton
-    l, r = getSingleton(left, right)
+    getSingleton()
     
     #step 2: left hand side extraneous attributes
     step2(l, r)
     
 
-def getSingleton(oldLeft, oldRight):
+def getSingleton():
     singleton = []
-    for i in range(len(oldRight)):
-        if len(oldRight[i])> 1:    
-            for letter in range(len(oldRight[i])):
-                singleton.append(oldLeft[i]+'->'+oldRight[i][letter])
+    for i in range(len(r_list)):
+        if len(r_list[i])> 1:    
+            for letter in range(len(r_list[i])):
+                singleton.append(l_list[i]+'->'+r_list[i][letter])
         else:
-            singleton.append(oldLeft[i]+'->'+oldRight[i])
+            singleton.append(l_list[i]+'->'+r_list[i])
     print 'singleton LIST',singleton
     
     # turn into list of sets
-    newLeft = []
-    #this is still a list
-    newRight=[]
+    l_list = []
+    #this is still a list of strings
+    r_list =[]
     
     for i in range(len(singleton)):
-        splitFD = singleton[i].split('->')
-        #we get new lists 
-        newLeft.append(splitFD[0])
-        newRight.append(splitFD[1])
-        
-    for j in range(len(newLeft)):
+        splitFD = singleton[i].split('->') 
+        l_list.append(splitFD[0])
+        r_list.append(splitFD[1])
+    # turn l_list into a list of sets
+    for j in range(len(l_list)):
         s = set()
-        for letter in newLeft[j]:
+        for letter in l_list[j]:
             s.add(letter)
-        newLeft[j] = s
-        #sr = set()
-        #for l in newRight[j]:
-            #sr.add(l)
-        #newRight[j]= sr
-    #print newLeft
-    #print newRight
-    return newLeft, newRight
+        l_list[j] = s
+        
+    ##return newLeft, newRight
        
        
-def step2(L_list, R_list):
-    for j in range(len(L_list)):
-        if len(L_list[j])>1:
-            remove_redundancy(L_list[j], R_list[j], L_list, R_list)
+def step2():
+    for j in range(len(l_list)):
+        if len(l_list[j])>1:
+            remove_redundancy(l_list[j], r_list[j])
             
     
         
-def remove_redundancy(LHS, RHS, l_list, r_list):
+def remove_redundancy(LHS, RHS):
     LHS_copy = set(LHS)
     i = l_list.index(LHS)
     
     for letter in LHS_copy:
         attribute = LHS_copy.difference(letter)
-        closure = getClosure(attribute, l_list, r_list)
+        closure = getClosure(attribute)
         print attribute,"closure: ", closure
         # save the closures, per attriute
         if RHS in closure:
             print "removed", letter
-            
             LHS.remove(letter)
             print "remaining", LHS
+            #replace attributes with reduced attributes
             l_list[i] = LHS
-            
-        
-
-        
+    print l_list
     #print "from remove_redundancy", closure
         
-def getClosure(attribute, l_list, r_list):
+def getClosure(attribute):
     #get copies of l and r
-    l_copy = l_list
+    l_copy = list(l_list)
     r_copy = list(r_list)
     # adds the clos
     closure_set = set()
@@ -171,25 +162,25 @@ def addtoset(set1,set2):
     #close = eliminate_dupes(closure_list)
     #print attribute+" closure: ", close
 
-def closure(l, r, attribute, closure_list):
-    #initialize closure to list with the attribute
-    close = [attribute]
-    for i in range(len(l)):
-        if attribute == l[i]:
-            #check if attribute already exists
-            for a in close:
-                if a== r[i]:
-                    continue
-                else:
-                    close.append(r[i])
-    closure_list.append(close)
-    print "closure of c", close
-    print "all", closure_list
+#def closure(l, r, attribute, closure_list):
+    ##initialize closure to list with the attribute
+    #close = [attribute]
+    #for i in range(len(l)):
+        #if attribute == l[i]:
+            ##check if attribute already exists
+            #for a in close:
+                #if a== r[i]:
+                    #continue
+                #else:
+                    #close.append(r[i])
+    #closure_list.append(close)
+    #print "closure of c", close
+    #print "all", closure_list
     
-    k=1    
-    while k < len(close):
-        closure(l,r, close[k], closure_list) 
-        k+=1
+    #k=1    
+    #while k < len(close):
+        #closure(l,r, close[k], closure_list) 
+        #k+=1
         
 
 #def eliminate_dupes(closure_list):
@@ -207,9 +198,9 @@ def closure(l, r, attribute, closure_list):
 #         MAIN             #
 ############################  
 # spits the fd into 2 lists
-L,R = connectDatabase()
+connectDatabase()
 
-#getMinimalCover(L,R)
+getMinimalCover()
 #l, r = getSingleton(L, R)
 
 #s = {'A','H'}

@@ -53,7 +53,11 @@ def getMinimalCover(left, right):
     l, r = getSingleton(left, right)
     
     #step 2: left hand side extraneous attributes
-    step2(l, r)
+    step2(l, r) #manipulates l and r
+    print 'l',l,'\nr',r
+    
+    #step 3:
+    step3(l,r)
     
 
 def getSingleton(oldLeft, oldRight):
@@ -82,10 +86,10 @@ def getSingleton(oldLeft, oldRight):
         for letter in newLeft[j]:
             s.add(letter)
         newLeft[j] = s
-        #sr = set()
-        #for l in newRight[j]:
-            #sr.add(l)
-        #newRight[j]= sr
+        sr = set()
+        for l in newRight[j]:
+            sr.add(l)
+        newRight[j]= sr
     #print newLeft
     #print newRight
     return newLeft, newRight
@@ -95,9 +99,34 @@ def step2(L_list, R_list):
     for j in range(len(L_list)):
         if len(L_list[j])>1:
             remove_redundancy(L_list[j], R_list[j], L_list, R_list)
+            print '\nl list removed redundancy ',L_list,'\n'
+    #print '\nr list removed redundancy', R_list
+    return L_list    
+    
+def step3(l_list, r_list):
+    #removed redundant FDs
+    for fd in l_list:
+    #find closure of current FD (exclude current FD)
+        l_copy = list(l_list)
+        r_copy = list(r_list)
+        index = l_list.index(fd)
+        print "fd", index
+        l_copy.remove(l_list[index])
+        r_copy.remove(r_list[index])
+        print 'L copy',l_copy
+        print 'R copy', r_copy
+        closure = getClosure(fd,l_copy, r_copy)
+        print "closure of T-",fd,"->",r_list[index],closure
+        #if RHS of FD is in the closure, then delete this FD because it's redundant
+        print '@@@r list index', r_list[index],'\n'
+        if r_list[index].issubset(closure):
+            #update l and r list
+            l_list = list(l_copy)
+            r_list = list(r_copy)
+            print "removed redundant FD", l_list, r_list
+        
             
     
-        
 def remove_redundancy(LHS, RHS, l_list, r_list):
     LHS_copy = set(LHS)
     i = l_list.index(LHS)
@@ -107,7 +136,7 @@ def remove_redundancy(LHS, RHS, l_list, r_list):
         closure = getClosure(attribute, l_list, r_list)
         print attribute,"closure: ", closure
         # save the closures, per attriute
-        if RHS in closure:
+        if RHS.issubset(closure):
             print "removed", letter
             
             LHS.remove(letter)
@@ -140,7 +169,8 @@ def getClosure(attribute, l_list, r_list):
                 #print "issubset"
                 #print r_copy[f]
                 #print r_copy
-                closure_set.add(r_copy[f])
+                ##closure_set.add(r_copy[f])
+                addtoset(r_copy[f],closure_set)
                 #print "added", closure_set
                 r_copy[f]=''
                 f+=1
