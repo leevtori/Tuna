@@ -68,6 +68,7 @@ def getSingleton(oldLeft, oldRight):
     
     # turn into list of sets
     newLeft = []
+    #this is still a list
     newRight=[]
     
     for i in range(len(singleton)):
@@ -81,10 +82,10 @@ def getSingleton(oldLeft, oldRight):
         for letter in newLeft[j]:
             s.add(letter)
         newLeft[j] = s
-        sr = set()
-        for l in newRight[j]:
-            sr.add(l)
-        newRight[j]= sr
+        #sr = set()
+        #for l in newRight[j]:
+            #sr.add(l)
+        #newRight[j]= sr
     #print newLeft
     #print newRight
     return newLeft, newRight
@@ -94,33 +95,57 @@ def step2(L_list, R_list):
     for attribute in L_list:
         if len(attribute)>1:
             remove_redundancy(attribute, L_list, R_list)
+            
     
         
-def remove_redundancy(attribute, l, r):
-    print attribute
+def remove_redundancy(attribute, l_list, r_list):
+    #print attribute
+    
     for letter in attribute:
         attri = attribute.difference(letter)
-        #print attri
-        getClosure(attri, l, r)
+        closure = getClosure(attri, l_list, r_list)
+        print attri,"closure: ", closure
         
-def getClosure(attri, l, r):
+    #print "from remove_redundancy", closure
+        
+def getClosure(attri, l_list, r_list):
+    #get copies of l and r
+    l_copy = []
+    l_copy= []
+    l_copy = l_list
+    r_copy = r_list
+    print "r_copy", r_copy
+    print "r_list", r_list
     # adds the clos
     closure_set = set()
     addtoset(attri, closure_set)
-    
-    #print "close",closure_set
-
-         
+             
     f = 0
-    #print len(l)-1
-    while f<(1):
-        if l[f].issubset(closure_set):
-            print "went to if"
-            addtoset(r[f],closure_set)
-            f = 0
-        else :
-            f += 1
-    print "hello?", closure_set
+    added=True
+    while added == True:
+        added = False        
+        for f in range(len(l_copy)):
+            print "index", f
+            print "new closure", closure_set
+            if r_copy[f] == '':
+                continue
+            elif l_copy[f].issubset(closure_set):
+                print "issubset"
+                print r_copy[f]
+                print r_copy
+                closure_set.add(r_copy[f])
+                print "added", closure_set
+                r_copy[f]=''
+                f+=1
+                added = True
+            else :
+                print "notsubset"
+                f += 1
+        #print closure_set
+    print attri,"closure: ", closure_set
+    return closure_set
+            
+   
            
 def addtoset(set1,set2):
     for letter in set1:
@@ -164,7 +189,7 @@ def closure(l, r, attribute, closure_list):
     #one = ''.join(one)
     #return one
     
-    
+
         
         
     
@@ -175,6 +200,13 @@ def closure(l, r, attribute, closure_list):
 L,R = connectDatabase()
 
 getMinimalCover(L,R)
+#l, r = getSingleton(L, R)
+
+#s = {'A','H'}
+#getClosure(s, l, r)
+
+
+
 
 
 
