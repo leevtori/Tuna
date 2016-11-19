@@ -2,9 +2,12 @@ import sqlite3
 import itertools
 from collections import OrderedDict
 
-
+#global variables
 conn = sqlite3.connect('MiniProject2-InputExample.db')
 c = conn.cursor()
+
+l_list=[] #list of sets [{'A','B','H'},{'A','B','H'},{'A'},{'C'}]
+r_list=[] #list of strings ['A','B','C']
 
 def connectDatabase():
 
@@ -33,11 +36,11 @@ def connectDatabase():
     # get LHS
     c.execute("select LHS from Input_FDs_R1;")
     lhs = c.fetchall()
-    LHS = []
+    ##LHS = []
     for i in range(len(lhs)):
         for j in range(len(lhs[i])):
-            LHS.append(''.join(str(lhs[i][j]).split(',')))
-    #print 'LHS',LHS
+            l_list.append(''.join(str(lhs[i][j]).split(',')))
+    print 'LHS',LHS
     #get RHS
     c.execute("select RHS from Input_FDs_R1;")
     rhs = c.fetchall()
@@ -206,7 +209,7 @@ def closure(l, r, attribute, closure_list):
 # spits the fd into 2 lists
 L,R = connectDatabase()
 
-getMinimalCover(L,R)
+#getMinimalCover(L,R)
 #l, r = getSingleton(L, R)
 
 #s = {'A','H'}
