@@ -108,19 +108,19 @@ def getClosure(attri, l, r):
     closure_set = set()
     addtoset(attri, closure_set)
     
-    print "close",closure_set
+    #print "close",closure_set
 
          
     f = 0
-    print len(1)-1
-    while f<(len(l))-1:
-        
+    #print len(l)-1
+    while f<(1):
         if l[f].issubset(closure_set):
+            print "went to if"
             addtoset(r[f],closure_set)
             f = 0
         else :
             f += 1
-    print closure_set
+    print "hello?", closure_set
            
 def addtoset(set1,set2):
     for letter in set1:
