@@ -1,6 +1,7 @@
 import sqlite3
 import itertools
 from collections import OrderedDict
+from itertools import chain
 
 
 conn = sqlite3.connect('MiniProject2-InputExample.db')
@@ -54,11 +55,37 @@ def getMinimalCover(left, right):
     
     #step 2: left hand side extraneous attributes
     step2(l, r) #manipulates l and r
-    print 'l',l,'\nr',r
+    #print 'l',l,'\nr',r
     
-    #step 3:
-    step3(l,r)
+    #step 3: Remove redundant FD's
+    rl,rr = step3(l,r)
+    left, right = convert_to_list(rl, rr)
     
+    # Combine into functional dependancies, and return the minimal cover FD
+    minimal_FD = []
+    for i in range(len(left)):
+        minimal_FD.append(left[i]+'->'+right[i])
+
+    print minimal_FD  
+   
+# converts the reduced list of sets into list of lists
+def convert_to_list(rl, rr):
+    left = []
+    right = []
+    for items in rl:
+        #change type 
+        l = list(items)
+        left.append(l)   
+    for i in rr:
+        r = list(i)
+        right.append(r)
+    l = []
+    for item in left:
+        x=''.join(item)
+        l.append(x)
+    right =list(chain.from_iterable(right))
+    return l, right
+
 
 def getSingleton(oldLeft, oldRight):
     singleton = []
@@ -90,8 +117,6 @@ def getSingleton(oldLeft, oldRight):
         for l in newRight[j]:
             sr.add(l)
         newRight[j]= sr
-    #print newLeft
-    #print newRight
     return newLeft, newRight
        
        
@@ -99,33 +124,29 @@ def step2(L_list, R_list):
     for j in range(len(L_list)):
         if len(L_list[j])>1:
             remove_redundancy(L_list[j], R_list[j], L_list, R_list)
-            print '\nl list removed redundancy ',L_list,'\n'
+            #print '\nl list removed redundancy ',L_list,'\n'
     #print '\nr list removed redundancy', R_list
     return L_list    
     
 def step3(l_list, r_list):
+    reduced_l_list = []
+    reduced_r_list = []
     #removed redundant FDs
-    for fd in l_list:
+    for i in range(len(l_list)):
     #find closure of current FD (exclude current FD)
         l_copy = list(l_list)
         r_copy = list(r_list)
-        index = l_list.index(fd)
-        print "fd", index
-        l_copy.remove(l_list[index])
-        r_copy.remove(r_list[index])
-        print 'L copy',l_copy
-        print 'R copy', r_copy
-        closure = getClosure(fd,l_copy, r_copy)
-        print "closure of T-",fd,"->",r_list[index],closure
-        #if RHS of FD is in the closure, then delete this FD because it's redundant
-        print '@@@r list index', r_list[index],'\n'
-        if r_list[index].issubset(closure):
-            #update l and r list
-            l_list = list(l_copy)
-            r_list = list(r_copy)
-            print "removed redundant FD", l_list, r_list
-        
-            
+        l_copy.remove(l_list[i])
+        r_copy.remove(r_list[i])
+        closure = getClosure(l_list[i],l_copy, r_copy)
+        #print "closure of T-",fd,"->",r_list[index],closure
+        #if RHS of FD is not in the closure, then this FD is not redundant, add it to reduced lists
+        if not r_list[i].issubset(closure):
+            reduced_l_list.append(l_list[i])
+            reduced_r_list.append(r_list[i])
+            #print "** reduced fd list", reduced_l_list
+            #print "** reduced fd list", reduced_r_list
+    return reduced_l_list, reduced_r_list          
     
 def remove_redundancy(LHS, RHS, l_list, r_list):
     LHS_copy = set(LHS)
@@ -134,16 +155,14 @@ def remove_redundancy(LHS, RHS, l_list, r_list):
     for letter in LHS_copy:
         attribute = LHS_copy.difference(letter)
         closure = getClosure(attribute, l_list, r_list)
-        print attribute,"closure: ", closure
+        #print attribute,"closure: ", closure
         # save the closures, per attriute
         if RHS.issubset(closure):
-            print "removed", letter
+            #print "removed", letter
             
             LHS.remove(letter)
-            print "remaining", LHS
+            #print "remaining", LHS
             l_list[i] = LHS
-            
-        
 
         
     #print "from remove_redundancy", closure
@@ -198,25 +217,25 @@ def addtoset(set1,set2):
     #close = eliminate_dupes(closure_list)
     #print attribute+" closure: ", close
 
-def closure(l, r, attribute, closure_list):
-    #initialize closure to list with the attribute
-    close = [attribute]
-    for i in range(len(l)):
-        if attribute == l[i]:
-            #check if attribute already exists
-            for a in close:
-                if a== r[i]:
-                    continue
-                else:
-                    close.append(r[i])
-    closure_list.append(close)
-    print "closure of c", close
-    print "all", closure_list
+#def closure(l, r, attribute, closure_list):
+    ##initialize closure to list with the attribute
+    #close = [attribute]
+    #for i in range(len(l)):
+        #if attribute == l[i]:
+            ##check if attribute already exists
+            #for a in close:
+                #if a== r[i]:
+                    #continue
+                #else:
+                    #close.append(r[i])
+    #closure_list.append(close)
+    #print "closure of c", close
+    #print "all", closure_list
     
-    k=1    
-    while k < len(close):
-        closure(l,r, close[k], closure_list) 
-        k+=1
+    #k=1    
+    #while k < len(close):
+        #closure(l,r, close[k], closure_list) 
+        #k+=1
         
 
 #def eliminate_dupes(closure_list):
@@ -237,12 +256,6 @@ def closure(l, r, attribute, closure_list):
 L,R = connectDatabase()
 
 getMinimalCover(L,R)
-#l, r = getSingleton(L, R)
-
-#s = {'A','H'}
-#getClosure(s, l, r)
-
-
 
 
 
