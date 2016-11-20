@@ -66,7 +66,7 @@ def getMinimalCover(left, right):
     for i in range(len(left)):
         minimal_FD.append(left[i]+'->'+right[i])
 
-    print minimal_FD  
+    print 'Minimal Cover', minimal_FD, '\n' 
     return minimal_FD
    
 # converts the reduced list of sets into list of lists
@@ -96,12 +96,12 @@ def getSingleton(oldLeft, oldRight):
                 singleton.append(oldLeft[i]+'->'+oldRight[i][letter])
         else:
             singleton.append(oldLeft[i]+'->'+oldRight[i])
-    print 'singleton LIST',singleton
+    #print 'singleton LIST',singleton
     
     # turn into list of sets
     newLeft = []
     #this is still a list
-    newRight=[]
+    newRight = []
     
     for i in range(len(singleton)):
         splitFD = singleton[i].split('->')
@@ -233,6 +233,7 @@ def addtoset(set1,set2):
 # spits the fd into 2 lists
 L,R = connectDatabase()
 
+#get minimal cover of FDs
 getMinimalCover(L,R)
 
 
