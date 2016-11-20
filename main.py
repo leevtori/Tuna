@@ -67,6 +67,7 @@ def getMinimalCover(left, right):
         minimal_FD.append(left[i]+'->'+right[i])
 
     print minimal_FD  
+    return minimal_FD
    
 # converts the reduced list of sets into list of lists
 def convert_to_list(rl, rr):
@@ -188,7 +189,6 @@ def getClosure(attribute, l_list, r_list):
                 #print "issubset"
                 #print r_copy[f]
                 #print r_copy
-                ##closure_set.add(r_copy[f])
                 addtoset(r_copy[f],closure_set)
                 #print "added", closure_set
                 r_copy[f]=''
@@ -198,25 +198,14 @@ def getClosure(attribute, l_list, r_list):
                 #print "notsubset"
                 f += 1
         #print closure_set
-    #print attri,"closure: ", closure_set
+    #print attribute,"closure: ", closure_set
     return closure_set
-            
-   
-           
+                  
 def addtoset(set1,set2):
     for letter in set1:
         set2.add(letter)
            
-                   
-
-#def redundancy(attribute, fd):
-
-    ##we call closure in here
-    #closure_list = [attribute]
-    #closure(left, right, attribute, closure_list)
-    #close = eliminate_dupes(closure_list)
-    #print attribute+" closure: ", close
-
+                
 #def closure(l, r, attribute, closure_list):
     ##initialize closure to list with the attribute
     #close = [attribute]
@@ -236,19 +225,8 @@ def addtoset(set1,set2):
     #while k < len(close):
         #closure(l,r, close[k], closure_list) 
         #k+=1
-        
 
-#def eliminate_dupes(closure_list):
-    #one =  list(itertools.chain.from_iterable(closure_list))
-    #one = set(one)
-    #one = list(one)
-    #one = ''.join(one)
-    #return one
-    
-
-        
-        
-    
+            
 ############################
 #         MAIN             #
 ############################  
