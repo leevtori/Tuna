@@ -3,12 +3,13 @@ import itertools
 import fnmatch
 from collections import OrderedDict
 from itertools import chain
+import re
 
 
 conn = sqlite3.connect('MiniProject2-InputExample.db')
 c = conn.cursor()
 
-def getRelationalSchema():
+def getRelationalSchema(relation):
 
     ## GET TABLE NAMES
     #c.execute("SELECT name FROM sqlite_master;")
@@ -21,29 +22,31 @@ def getRelationalSchema():
     #        table.append(str(table_names[i][j]))
     #print 'All relations: ',table 
     #print 
-
+    table_name = 'Input_R'+relation
     # GET COLUMN NAMES
-    c.execute("PRAGMA table_info(Input_R1)")
+    sql = "PRAGMA table_info("+table_name+")"
+    c.execute(sql)
     col_names = c.fetchall()
     #print col_names
     # This is the list of column names
     col= []
     for i in range (len(col_names)):
         col.append(str(col_names[i][1]))
-    print 'Columns of [R]',col
-    print
+    print 'Columns of R'+relation,col
 
     # GET FUNCTIONAL DEPENDENCIES
     # get LHS
-    c.execute("select LHS from Input_FDs_R1;")
+    table_fds = 'Input_FDs_R'+relation
+    sql = "select LHS from "+table_fds+";"
+    c.execute(sql)
     lhs = c.fetchall()
     LHS = []
     for i in range(len(lhs)):
         for j in range(len(lhs[i])):
             LHS.append(''.join(str(lhs[i][j]).split(',')))
-    #print 'LHS',LHS
     #get RHS
-    c.execute("select RHS from Input_FDs_R1;")
+    sql = "select RHS from "+table_fds+";"
+    c.execute(sql)
     rhs = c.fetchall()
     RHS = []
     for i in range(len(rhs)):
@@ -238,27 +241,31 @@ def addtoset(set1,set2):
 # GET TABLE NAMES                                                                            
 c.execute("SELECT name FROM sqlite_master;")
 table_names = c.fetchall()
-print table_names                                                                           
+#print table_names                                                                           
 
 # 1 list the table names                                                                  
 table = []
 for i in range(len(table_names)):
     for j in range(len(table_names[i])):
         if fnmatch.fnmatch(str(table_names[i][j]),'Input_R*'):
-            table.append(str(table_names[i][j]))
+            name = str(table_names[i][j])
+            splitname = name.split('_')
+            table.append(splitname[1])
 print 'All relations: ', table
 
 # prompt user to pick a relation
-relation = raw_input('Pick a table by entering its number')
-
-
+relation = raw_input('Pick a table by entering its number: ')
 
 # spits the fd into 2 lists
-#L,R = getRelationalSchema()
-
+L,R = getRelationalSchema(relation)
+print
+print 'LHS',L
+print 'RHS',R
+print
 
 #get minimal cover of FDs
-#getMinimalCover(L,R)
+getMinimalCover(L,R)
+print
 
 
 
