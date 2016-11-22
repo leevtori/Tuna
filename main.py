@@ -10,18 +10,6 @@ conn = sqlite3.connect('MiniProject2-InputExample.db')
 c = conn.cursor()
 
 def getRelationalSchema(relation):
-
-    ## GET TABLE NAMES
-    #c.execute("SELECT name FROM sqlite_master;")
-    #table_names = c.fetchall()
-    #print table_names
-    # 1 list of the table names
-    #table = []
-    #for i in range(len(table_names)):
-    #    for j in range(len(table_names[i])):
-    #        table.append(str(table_names[i][j]))
-    #print 'All relations: ',table 
-    #print 
     table_name = 'Input_R'+relation
     # GET COLUMN NAMES
     sql = "PRAGMA table_info("+table_name+")"
@@ -210,29 +198,89 @@ def getClosure(attribute, l_list, r_list):
 def addtoset(set1,set2):
     for letter in set1:
         set2.add(letter)
-           
-                
-#def closure(l, r, attribute, closure_list):
-    ##initialize closure to list with the attribute
-    #close = [attribute]
-    #for i in range(len(l)):
-        #if attribute == l[i]:
-            ##check if attribute already exists
-            #for a in close:
-                #if a== r[i]:
-                    #continue
-                #else:
-                    #close.append(r[i])
-    #closure_list.append(close)
-    #print "closure of c", close
-    #print "all", closure_list
-    
-    #k=1    
-    #while k < len(close):
-        #closure(l,r, close[k], closure_list) 
-        #k+=1
+        
+        
 
-            
+#==============================================================================#
+# check_3nf(LH, RH, F)
+# checks if F is in 3nf. First checks if F is in BCNF. If yes, the function will
+# return True, else, it will check if RH of violating FDs are prime attributes
+# by calling the function find_prime.
+# parameters: LH - left hand side of FDs
+#             RH - right hands side of FDs
+#             F - all attributes
+# Returns: True if not violating, False if violating
+#==============================================================================#
+def check_3nf(LH,RH,F):
+    violating, prime = check_bcnf(LH, RH, F)
+    if not violating: # checks if there are any FDs that violate BCNF
+        return True
+
+    for fd in violating:
+        if len(set(RH[fd]).intersection(prime)) == len(RH[i]):
+            continue
+        else:
+            return False
+    return True
+
+#==============================================================================#
+# third_normal(minimal_cover)
+# Finds 3NF given the minimal cover.
+# paramters: minimal_cover : minimal cover of F
+# returns: LH - left hand side of FDs after decomposition
+#          RH - right hand side  of FDs after decomposition
+#==============================================================================#
+def third_normal(LH, RH):
+    #if check_3nf(LH, RH, f):
+        #return LH, RH # it's already in 3NF
+    minimal_cover = getMinimalCover(LH, RH)
+
+    min_cover = [fd.split("->") for fd in minimal_cover] # split the left and right hand sides
+    third_norm = dict()
+    # combine fds with the same RHS
+    for item in min_cover:
+        # if RHS is already exists, then combine LHS.
+        if item[0] in third_norm:
+            third_norm[item[0]] = third_norm[item[0]] + item[1]
+        # if not, add both RHS and LHS to dictionary.
+        else:
+            third_norm[item[0]] = item[1]
+
+    LH = third_norm.keys()
+    print type(LH)
+    RH = [third_norm[item] for item in LH]
+    threenf = []
+    for i in len(LH):
+        threenf.append(LH[i]+'->'+RH[i])
+    print LH, RH
+        
+        
+def output_schema(LH, RH, file_num):
+    r = LH + RH
+    r = ''.join(r)
+    r = set(r)
+    r_list = list(r)
+    r = ''.join(r_list)
+    
+    print r
+    print r_list
+    
+    inp = 'INPUT_R'+str(file_num)
+    name = 'OUTPUT_R'+str(file_num)+'_'+r
+    sql = 'create view '+name+' AS '+'SELECT '
+    for i in r_list:
+        sql+=(i+',')
+    sql = sql[:-1]
+    print sql
+    sql+=' FROM '+inp+';'
+    print sql
+    
+    c.execute(sql)    
+
+def output_FD(LH, RH, file_num):
+    return 
+           
+                            
 ############################
 #         MAIN             #
 ############################  
@@ -258,13 +306,17 @@ relation = raw_input('Pick a table by entering its number: ')
 
 # spits the fd into 2 lists
 L,R = getRelationalSchema(relation)
+
+
 print
 print 'LHS',L
 print 'RHS',R
 print
 
 #get minimal cover of FDs
-getMinimalCover(L,R)
+#getMinimalCover(L,R)
+third_normal(L, R)
+
 print
 
 
