@@ -9,6 +9,13 @@ import re
 conn = sqlite3.connect('MiniProject2-InputExample.db')
 c = conn.cursor()
 
+#=============================================================================#
+#getRelationalSchema(relation)
+#gets the colums of the table specified
+#returns 2 lists, LHS, RHS attributes
+#parameters: relation, is the number the user enters which specifies which table
+#=============================================================================#
+
 def getRelationalSchema(relation):
     table_name = 'Input_R'+relation
     # GET COLUMN NAMES
@@ -43,6 +50,13 @@ def getRelationalSchema(relation):
     
     return LHS,RHS
 
+#=============================================================================#
+#getMinimalCover(left, right)
+#finds the minimal coverage, calling on several methods
+#parameters: left - lhs attributes
+#            right - rhs attributes
+#=============================================================================#
+
 def getMinimalCover(left, right):
     #step 1: right hand side singleton
     l, r = getSingleton(left, right)
@@ -62,7 +76,13 @@ def getMinimalCover(left, right):
 
     print 'Minimal Cover', minimal_FD, '\n' 
     return minimal_FD
-   
+
+#=============================================================================#
+#convert_to_list(rl, rr)
+#coverting the sets to lists from the third step of minimal cover
+#paramters: rr, reduced right list
+#           rl, reduced left list
+#=============================================================================#
 # converts the reduced list of sets into list of lists
 def convert_to_list(rl, rr):
     left = []
@@ -81,6 +101,10 @@ def convert_to_list(rl, rr):
     right =list(chain.from_iterable(right))
     return l, right
 
+#=============================================================================#
+# getSingleton(oldLeft, oldRight)
+# step one of min cover, seperate all attributes on RHS to single attribute
+#=============================================================================#
 
 def getSingleton(oldLeft, oldRight):
     singleton = []
@@ -114,7 +138,10 @@ def getSingleton(oldLeft, oldRight):
         newRight[j]= sr
     return newLeft, newRight
        
-       
+#=============================================================================#
+# step2
+# removes the redundancy in the LHS, by callin on remove_redudancy method
+#=============================================================================#
 def step2(L_list, R_list):
     for j in range(len(L_list)):
         if len(L_list[j])>1:
@@ -122,7 +149,11 @@ def step2(L_list, R_list):
             #print '\nl list removed redundancy ',L_list,'\n'
     #print '\nr list removed redundancy', R_list
     return L_list    
-    
+
+#=============================================================================#
+# step3
+# removes redundant dependancies by comparing the attribute with the closure
+#=============================================================================#
 def step3(l_list, r_list):
     reduced_l_list = []
     reduced_r_list = []
@@ -142,7 +173,10 @@ def step3(l_list, r_list):
             #print "** reduced fd list", reduced_l_list
             #print "** reduced fd list", reduced_r_list
     return reduced_l_list, reduced_r_list          
-    
+#=============================================================================#
+# remove_redundancy(LHS, RHS, l_list, r_list)
+# parameters 
+#=============================================================================#
 def remove_redundancy(LHS, RHS, l_list, r_list):
     LHS_copy = set(LHS)
     i = l_list.index(LHS)
@@ -161,7 +195,10 @@ def remove_redundancy(LHS, RHS, l_list, r_list):
 
         
     #print "from remove_redundancy", closure
-        
+#=============================================================================#
+# getClosure(attribute, l_list, r_list)
+# finds the closure of attribute
+#=============================================================================#
 def getClosure(attribute, l_list, r_list):
     #get copies of l and r
     l_copy = l_list
@@ -194,7 +231,12 @@ def getClosure(attribute, l_list, r_list):
         #print closure_set
     #print attribute,"closure: ", closure_set
     return closure_set
-                  
+
+#=============================================================================#
+# add to set(set1, set2)
+# method to add a number to the set, because in other methods, the sets are 
+# stored as a list of sets
+#=============================================================================#
 def addtoset(set1,set2):
     for letter in set1:
         set2.add(letter)
@@ -254,7 +296,10 @@ def third_normal(LH, RH):
         threenf.append(LH[i]+'->'+RH[i])
     return  threenf, LH, RH
         
-        
+#=============================================================================#
+# output_schema
+# creates a view of the output of the normalized data
+#=============================================================================#
 def output_schema(LH, RH, file_num):
     r = LH + RH
     r = ''.join(r)
@@ -274,7 +319,10 @@ def output_schema(LH, RH, file_num):
 
     c.execute(drop)
     c.execute(sql)    
-
+#=============================================================================#
+# output_FD
+# creates a view of the output of the normalized functional dependancies
+#=============================================================================#
 def output_FD(LH, RH, file_num):
     r = LH + RH
     r = ''.join(r)
@@ -321,11 +369,8 @@ L,R = getRelationalSchema(relation)
 #get minimal cover of FDs
 #getMinimalCover(L,R)
 TNF, LH, RH = third_normal(L, R)
-
 output_schema(LH, RH, relation)
 output_FD(LH, RH, relation) 
-
-print
 
 
 
