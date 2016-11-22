@@ -247,12 +247,12 @@ def third_normal(LH, RH):
             third_norm[item[0]] = item[1]
 
     LH = third_norm.keys()
-    print type(LH)
     RH = [third_norm[item] for item in LH]
+    
     threenf = []
-    for i in len(LH):
+    for i in range(len(LH)):
         threenf.append(LH[i]+'->'+RH[i])
-    print LH, RH
+    return  threenf, LH, RH
         
         
 def output_schema(LH, RH, file_num):
@@ -261,25 +261,36 @@ def output_schema(LH, RH, file_num):
     r = set(r)
     r_list = list(r)
     r = ''.join(r_list)
-    
-    print r
-    print r_list
-    
+  
     inp = 'INPUT_R'+str(file_num)
     name = 'OUTPUT_R'+str(file_num)+'_'+r
     sql = 'create view '+name+' AS '+'SELECT '
     for i in r_list:
         sql+=(i+',')
     sql = sql[:-1]
-    print sql
     sql+=' FROM '+inp+';'
     print sql
-    
+    drop = "DROP VIEW IF EXISTS "+name
+
+    c.execute(drop)
     c.execute(sql)    
 
 def output_FD(LH, RH, file_num):
-    return 
-           
+    r = LH + RH
+    r = ''.join(r)
+    r = set(r)
+    r_list = list(r)
+    r = ''.join(r_list)    
+    name = 'OUTPUT_FDs_R'+str(file_num)+'_'+r
+    inp = 'INPUT_FDs_R'+str(file_num)
+    sql = 'create view '+name+' AS SELECT LHS, RHS FROM '
+    sql+= inp+';'
+    print sql
+    drop = "DROP VIEW IF EXISTS "+name
+  
+    c.execute(drop)
+    c.execute(sql)     
+              
                             
 ############################
 #         MAIN             #
@@ -307,15 +318,12 @@ relation = raw_input('Pick a table by entering its number: ')
 # spits the fd into 2 lists
 L,R = getRelationalSchema(relation)
 
-
-print
-print 'LHS',L
-print 'RHS',R
-print
-
 #get minimal cover of FDs
 #getMinimalCover(L,R)
-third_normal(L, R)
+TNF, LH, RH = third_normal(L, R)
+
+output_schema(LH, RH, relation)
+output_FD(LH, RH, relation) 
 
 print
 
