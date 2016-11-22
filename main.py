@@ -1,5 +1,6 @@
 import sqlite3
 import itertools
+import fnmatch
 from collections import OrderedDict
 from itertools import chain
 
@@ -7,19 +8,20 @@ from itertools import chain
 conn = sqlite3.connect('MiniProject2-InputExample.db')
 c = conn.cursor()
 
-def connectDatabase():
+def getRelationalSchema():
 
-    # GET TABLE NAMES
-    c.execute("SELECT name FROM sqlite_master;")
-    table_names = c.fetchall()
+    ## GET TABLE NAMES
+    #c.execute("SELECT name FROM sqlite_master;")
+    #table_names = c.fetchall()
     #print table_names
     # 1 list of the table names
-    table = []
-    for i in range(len(table_names)):
-        for j in range(len(table_names[i])):
-            table.append(str(table_names[i][j]))
-    #print table 
-    
+    #table = []
+    #for i in range(len(table_names)):
+    #    for j in range(len(table_names[i])):
+    #        table.append(str(table_names[i][j]))
+    #print 'All relations: ',table 
+    #print 
+
     # GET COLUMN NAMES
     c.execute("PRAGMA table_info(Input_R1)")
     col_names = c.fetchall()
@@ -28,8 +30,9 @@ def connectDatabase():
     col= []
     for i in range (len(col_names)):
         col.append(str(col_names[i][1]))
-    #print col
-    
+    print 'Columns of [R]',col
+    print
+
     # GET FUNCTIONAL DEPENDENCIES
     # get LHS
     c.execute("select LHS from Input_FDs_R1;")
@@ -230,11 +233,32 @@ def addtoset(set1,set2):
 ############################
 #         MAIN             #
 ############################  
+
+#ask user to choose a relation R
+# GET TABLE NAMES                                                                            
+c.execute("SELECT name FROM sqlite_master;")
+table_names = c.fetchall()
+print table_names                                                                           
+
+# 1 list the table names                                                                  
+table = []
+for i in range(len(table_names)):
+    for j in range(len(table_names[i])):
+        if fnmatch.fnmatch(str(table_names[i][j]),'Input_R*'):
+            table.append(str(table_names[i][j]))
+print 'All relations: ', table
+
+# prompt user to pick a relation
+relation = raw_input('Pick a table by entering its number')
+
+
+
 # spits the fd into 2 lists
-L,R = connectDatabase()
+#L,R = getRelationalSchema()
+
 
 #get minimal cover of FDs
-getMinimalCover(L,R)
+#getMinimalCover(L,R)
 
 
 
