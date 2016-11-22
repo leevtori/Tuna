@@ -11,17 +11,7 @@ c = conn.cursor()
 
 def getRelationalSchema(relation):
 
-    ## GET TABLE NAMES
-    #c.execute("SELECT name FROM sqlite_master;")
-    #table_names = c.fetchall()
-    #print table_names
-    # 1 list of the table names
-    #table = []
-    #for i in range(len(table_names)):
-    #    for j in range(len(table_names[i])):
-    #        table.append(str(table_names[i][j]))
-    #print 'All relations: ',table 
-    #print 
+    
     table_name = 'Input_R'+relation
     # GET COLUMN NAMES
     sql = "PRAGMA table_info("+table_name+")"
@@ -58,14 +48,25 @@ def getRelationalSchema(relation):
 def getMinimalCover(left, right):
     #step 1: right hand side singleton
     l, r = getSingleton(left, right)
+    print 'singleton'
+    print l
+    print r
+    print
     
     #step 2: left hand side extraneous attributes
     step2(l, r) #manipulates l and r
-    #print 'l',l,'\nr',r
+    print 'LHS extraneous attributes'
+    print 'l',l,'\nr',r
+    print
     
     #step 3: Remove redundant FD's
     rl,rr = step3(l,r)
     left, right = convert_to_list(rl, rr)
+    print 'remove redundant FDs'
+    print left
+    print right
+    print
+    
     
     # Combine into functional dependancies, and return the minimal cover FD
     minimal_FD = []
@@ -131,8 +132,8 @@ def step2(L_list, R_list):
     for j in range(len(L_list)):
         if len(L_list[j])>1:
             remove_redundancy(L_list[j], R_list[j], L_list, R_list)
-            #print '\nl list removed redundancy ',L_list,'\n'
-    #print '\nr list removed redundancy', R_list
+            print '\nl list removed redundancy ',L_list,'\n'
+    print '\nr list removed redundancy', R_list
     return L_list    
     
 def step3(l_list, r_list):
@@ -162,18 +163,22 @@ def remove_redundancy(LHS, RHS, l_list, r_list):
     for letter in LHS_copy:
         attribute = LHS_copy.difference(letter)
         closure = getClosure(attribute, l_list, r_list)
-        #print attribute,"closure: ", closure
+        print attribute,"closure: ", closure
         # save the closures, per attriute
         if RHS.issubset(closure):
-            #print "removed", letter
+            print "removed", letter
             
             LHS.remove(letter)
-            #print "remaining", LHS
+            print "remaining", LHS
             l_list[i] = LHS
 
         
     #print "from remove_redundancy", closure
-        
+    
+#gets closure of a set of attributes
+#atribute is a set {'A','B','C'}
+#l_list is a list of LHS FDs
+#r_list is the corresponding list of RHS FDs
 def getClosure(attribute, l_list, r_list):
     #get copies of l and r
     l_copy = l_list
@@ -267,7 +272,49 @@ print
 getMinimalCover(L,R)
 print
 
-
+# prompt user to pick an action:
+# 1.3NF
+# 2.BCNF
+# 3.Get Closure of an attribute. Have user specify an attribute set, tables(union of these tables as F)
+# 4.Check equivalency F1 and F2. Get minimal cover of F1 and F2 and see if they are the same??
+while True:
+    print "Available Operations: \n[1] 3NF\n[2] BCNF\n[3] Get Closure\n[4] Check Equivalency"
+    op = raw_input("Please enter an operation or 'quit' to quit: ").lower()
+    
+    if op == '1':
+        pass
+    if op == '2':
+        pass
+    if op == '3':
+        #get attribute set and tables
+        a=raw_input("Enter attribute set: ").upper()
+        a_set = set()
+        for letter in a:
+            a_set.add(letter)
+        t=raw_input("Enter table numbers in the format '1,2,4': ")
+        tables = t.split(',')
+        
+        #add all FDs together
+        l = []
+        r = []        
+        for table in tables:
+            table_l, table_r = getRelationalSchema(table)
+            l+=table_l
+            r+=table_r
+        print l
+        print r
+            
+        
+        #get closure of F
+        #closure = getClosure(a_set, l,r)
+        
+        
+        
+    if op == '4':
+        pass
+    if op == 'quit':
+        break
+    
 
 
 
