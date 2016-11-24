@@ -125,7 +125,7 @@ def convert_to_list(rl, rr):
     left = []
     right = []
     for items in rl:
-        items = ''.join(sorted(items)) #change to alphabetical order
+        items = ''.join(sorted(items)) #change string to alphabetical order
         #change type
         l = list(items)
         left.append(l)
@@ -558,25 +558,59 @@ def checkDependency(decomp, LH, RH):
 # relation is a set of attributes that is returned, from that we can get the fds
 # and keys 
 #=============================================================================#
-def output_schema(relation, file_num):
+def output_schema(relation, table_num, col_names, col_types):
+    print 'names',col_names
+    print 'types',col_types
     for r in relation:
-        keys = r.keys
         attributes = r.attributes
-        fd = r.FDs
+        print 'attributes', attributes
+        attri_string = ''
+        for a in attributes:
+            attri_string+=a
+
+        #create output relation tables
+        inp = 'INPUT_R'+str(table_num) #input_R1_AD
+        outp = 'OUTPUT_R'+str(table_num)+'_'+attri_string #output_R1_AD
+        sql = 'CREATE TABLE '+outp+'('
+        #create empty table input_R1_AD 
+        r_cols=[]
+        for attri in attri_string:
+            l = attri.split()
+            r_cols += l
+        print 'r cols', r_cols
+        for letter in r_cols:
+            l_type = col_types[col_names.index(letter)]
+            sql += letter+' '
+            sql += l_type
+            sql += ','
+        sql = sql[:-1]
+        sql += ');'
+        drop = 'DROP TABLE IF EXISTS '+outp+';'
+        print 'drop ', drop
+        print 'sql ',sql
+        c.execute(drop)
+        c.execute(sql) 
+    
+        #populate output table with data from inp
         
-
-    inp = 'INPUT_R'+str(file_num)
-    name = 'OUTPUT_R'+str(file_num)+'_'+r
-    sql = 'create view '+name+' AS '+'SELECT '
-    for i in r_list:
-        sql+=(i+',')
-    sql = sql[:-1]
-    sql+=' FROM '+inp+';'
-    #print sql
-    drop = "DROP VIEW IF EXISTS "+name
-
-    c.execute(drop)
-    c.execute(sql)
+        #insert into output_R1_ABC (A,B,C) select A,B,C from Input_R1;
+        ins = 'INSERT INTO '+outp+' ('
+        r_col_str = ''
+        for letter in r_cols:
+            r_col_str += letter+','
+        r_col_str = r_col_str[:-1]
+        ins += r_col_str+') SELECT '+r_col_str+' from '+inp+';'
+        print 'ins', ins
+        c.execute(ins)
+        
+         
+        print
+ 
+     
+        
+        
+        
+        
 #=============================================================================#
 # output_FD
 # creates a view of the output of the normalized functional dependancies
@@ -670,18 +704,19 @@ while True:
     op = raw_input("Please enter an operation or 'quit' to quit: ").lower()
 
     if op == '1':
-        #ask user to pick relation
+        #ask user to pick relation ***relation here means: table number***
         relation = pickRelation()
 
         # spits the fd into 2 lists
-        L,R, COL = getRelationalSchema(relation)
+        L,R, col_names, col_types = getRelationalSchema(relation)
 
         #get 3NF
-        all_relations = third_normal(L,R, COL)
+        all_relations = third_normal(L,R, col_names)
 
         # The output data in its proper format
-        output_schema(all_relations, relation)
-        output_FD(all_realtions, relation)
+        output_schema(all_relations, relation, col_names, col_types)
+        ##output_FD(all_realtions, relation)
+        conn.commit()
 
     elif op == '2':
         pass
