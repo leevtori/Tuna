@@ -603,9 +603,12 @@ def output_FD(relation, file_num):
         
         fds = r.FDs  # this is a list of tuples 
         for fd in fds:
+            #if fd is empty, skip
+            if len(fd)<1: 
+                continue            
             l=fd[0]
             r=fd[1]
-            print l, r
+        
             sql = 'INSERT INTO '+name+' VALUES ('+'"'+str(l)+'"'+','+'"'+str(r)+'"'+');'
             print sql
             c.execute(sql)   
