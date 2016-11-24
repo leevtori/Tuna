@@ -2,11 +2,32 @@ import sqlite3
 import itertools
 import fnmatch
 from collections import OrderedDict
-from itertools import chain
+from itertools import chain, combinations
 import re
 
+#==============================================================================#
+# A class to hold the relations.
+# Used to store decomposed relations (or any relation)
+#==============================================================================#
+class relation:
+    def __init__(self):
+        self.keys = set() # keys of the relation
+        self.attributes = set() # all attributes
+        self.FDs = [] # functional dependancies in tuples (LH, RH)
 
+    def __repr__(self): # for debugging
+        print "attributes:", self.attributes
+        print "keys:", self.keys
+        print "Functional Dependancies:"
+        self.printFDs()
 
+    def add_FDs(self, LH, RH): # makes things easier in BCNF
+        for i in range(len(LH)):
+            self.FDs.append((LH[i], RH[i]))
+
+    def printFDs(self): # to only print FDs
+        for fd in self.FDs:
+            print fd[0], '->', fd[1]
 
 #=============================================================================#
 #getRelationalSchema(relation)
@@ -46,7 +67,7 @@ def getRelationalSchema(relation):
     for i in range(len(rhs)):
         for j in range(len(rhs[i])):
             RHS.append(''.join(str(rhs[i][j]).split(',')))
-    
+
     return LHS,RHS
 
 #=============================================================================#
@@ -62,28 +83,28 @@ def getMinimalCover(left, right):
     #print 'singleton'
     #print l
     #print r
-    
+
     #step 2: left hand side extraneous attributes
     newl,newr=step2(l, r) #manipulates l and r
     #print 'Step 2: Removed LHS extraneous attributes'
     #print 'new l',newl,'\nnew r',newr
-    
+
     #step 3: Remove redundant FD's
     rl,rr = step3(newl,newr)
     left, right = convert_to_list(rl, rr)
     #print 'Step 3: Removed redundant FDs'
     #print left
     #print right
-    
-    
+
+
     # Combine into functional dependancies, and return the minimal cover FD
     minimal_FD = []
     for i in range(len(left)):
         minimal_FD.append(left[i]+'->'+right[i])
     print '==================================================================='
-    print 'Minimal Cover', minimal_FD, '\n' 
+    print 'Minimal Cover', minimal_FD, '\n'
     print '==================================================================='
-    
+
     return minimal_FD
 
 #=============================================================================#
@@ -98,9 +119,9 @@ def convert_to_list(rl, rr):
     right = []
     for items in rl:
         items = ''.join(sorted(items)) #change to alphabetical order
-        #change type 
+        #change type
         l = list(items)
-        left.append(l)   
+        left.append(l)
     for i in rr:
         i = ''.join(sorted(i))
         r = list(i)
@@ -123,24 +144,24 @@ def convert_to_list(rl, rr):
 def getSingleton(oldLeft, oldRight):
     singleton = []
     for i in range(len(oldRight)):
-        if len(oldRight[i])> 1:    
+        if len(oldRight[i])> 1:
             for letter in range(len(oldRight[i])):
                 singleton.append(oldLeft[i]+'->'+oldRight[i][letter])
         else:
             singleton.append(oldLeft[i]+'->'+oldRight[i])
     #print 'singleton LIST',singleton
-    
+
     # turn into list of sets
     newLeft = []
     #this is still a list
     newRight = []
-    
+
     for i in range(len(singleton)):
         splitFD = singleton[i].split('->')
-        #we get new lists 
+        #we get new lists
         newLeft.append(splitFD[0])
         newRight.append(splitFD[1])
-        
+
     for j in range(len(newLeft)):
         s = set()
         for letter in newLeft[j]:
@@ -151,13 +172,13 @@ def getSingleton(oldLeft, oldRight):
             sr.add(l)
         newRight[j]= sr
     return newLeft, newRight
-       
+
 #=============================================================================#
 # step2
 # removes the redundancy in the LHS, by callin on remove_redudancy method
 #
 # input L_list: singleton list of sets of lhs attributes
-# input R_list: singleton list of sets of rhs attributes 
+# input R_list: singleton list of sets of rhs attributes
 # output L_list: input L_list with redundant lhs attributes removed
 # output R_list: unchanged from input R_list
 #=============================================================================#
@@ -167,7 +188,7 @@ def step2(L_list, R_list):
             remove_redundancy(L_list[j], R_list[j], L_list, R_list)
             #print '\nl list removed redundancy ',L_list,'\n'
             #print '\nr list removed redundancy', R_list
-    return L_list, R_list   
+    return L_list, R_list
 
 #=============================================================================#
 # step3
@@ -188,7 +209,7 @@ def step3(l_list, r_list):
         l_copy = list(l_list)
         r_copy = list(r_list)
         #print 'STEP 3 l copy', l_copy
-        #print 'STEP 3 r copy', r_copy        
+        #print 'STEP 3 r copy', r_copy
         l_copy.pop(i)
         r_copy.pop(i)
         #print 'STEP 3 l copy removed 1 fd', l_copy
@@ -201,7 +222,7 @@ def step3(l_list, r_list):
             reduced_r_list.append(r_list[i])
             #print "** reduced fd list", reduced_l_list
             #print "** reduced fd list", reduced_r_list
-    return reduced_l_list, reduced_r_list          
+    return reduced_l_list, reduced_r_list
 #=============================================================================#
 # remove_redundancy(LHS, RHS, l_list, r_list)
 # removes any redundant letters on the lhs of an FD
@@ -216,7 +237,7 @@ def step3(l_list, r_list):
 def remove_redundancy(LHS, RHS, l_list, r_list):
     LHS_copy = set(LHS)
     i = l_list.index(LHS)
-    
+
     for letter in LHS_copy:
         attribute = LHS_copy.difference(letter)
         closure = getClosure(attribute, l_list, r_list)
@@ -224,14 +245,14 @@ def remove_redundancy(LHS, RHS, l_list, r_list):
         # save the closures, per attriute
         if RHS.issubset(closure):
             #print "removed", letter
-            
+
             LHS.remove(letter)
             #print "remaining", LHS
             l_list[i] = LHS
 
-        
+
     #print "from remove_redundancy", closure
-    
+
 #gets closure of a set of attributes
 #atribute is a set {'A','B','C'}
 #l_list is a list of LHS FDs
@@ -249,16 +270,16 @@ def getClosure(attribute, l_list, r_list):
     # adds the closure
     closure_set = set()
     addtoset(attribute, closure_set)
-             
+
 
     added=True
     while added == True:
-        added = False        
+        added = False
         for f in range(len(l_copy)):
             #print "index", f
             #print "current closure", closure_set
             #print 'l copy', l_copy
-            #print 'r copy', r_copy            
+            #print 'r copy', r_copy
             if r_copy[f] == '':
                 continue
             elif l_copy[f].issubset(closure_set):
@@ -276,34 +297,56 @@ def getClosure(attribute, l_list, r_list):
 
 #=============================================================================#
 # add to set(set1, set2)
-# method to add a number to the set, because in other methods, the sets are 
+# method to add a number to the set, because in other methods, the sets are
 # stored as a list of sets
 #=============================================================================#
 def addtoset(set1,set2):
     for letter in set1:
         set2.add(letter)
-        
-        
+
+
+
+#==============================================================================#
+# check_bcnf(LH, RH, F)
+# checks if F is in bcnf.
+# parameters: LH - left hand side of FDs
+#             RH - right hands side of FDs
+#             F - all attributes
+# Returns: violating: a list of violating FDs referenced by index.
+#==============================================================================#
+def check_bcnf(LH,RH,F):
+    violating =[]
+    for i in range(len(LH)):
+        closureX = getClosure(LH[i], LH, RH)
+        if len(closureX) == len(F): # if LH is a key
+            continue
+
+        LRintersection = [x for x in RH if x in LH] # if RH is a subest of LH
+        if len(LRintersection) != len(RH):
+            violating.append(i)
+
+    return violating
 
 #==============================================================================#
 # check_3nf(LH, RH, F)
-# checks if F is already in 3nf. First checks if F is in BCNF. If yes, the function will
-# return True, else, it will check if RH of violating FDs are prime attributes
-# by calling the function find_prime.
+# checks if F is in 3nf. First checks if F is in BCNF. If yes, the function will
+# return True, else, it will check if RH of violating FDs are prime attributes.
+# The function will call findPrime to find the prime attributes.
 # parameters: LH - left hand side of FDs
 #             RH - right hands side of FDs
 #             F - all attributes
 # Returns: True if not violating, False if violating
 #==============================================================================#
 def check_3nf(LH,RH,F):
-    violating, prime = check_bcnf(LH, RH, F)
+    violating = check_bcnf(LH,RH,F)
     if not violating: # checks if there are any FDs that violate BCNF
         return True
 
+    # find the prime attributes
+    prime = findPrime(LH, RH, F)
+
     for fd in violating:
-        if len(set(RH[fd]).intersection(prime)) == len(RH[i]):
-            continue
-        else:
+        if len(set(RH[fd]).intersection(prime)) != len(RH[fd]):
             return False
     return True
 
@@ -311,12 +354,11 @@ def check_3nf(LH,RH,F):
 # third_normal(minimal_cover)
 # Finds 3NF given the minimal cover.
 # paramters: minimal_cover : minimal cover of F
-# returns: LH - left hand side of FDs after decomposition
-#          RH - right hand side  of FDs after decomposition
+# returns: decomp - a list of decomposed relations.
 #==============================================================================#
-def third_normal(LH, RH):
-    #if check_3nf(LH, RH, f):
-        #return LH, RH # it's already in 3NF
+def third_normal(LH, RH, f):
+    if check_3nf(LH, RH, f):
+        return LH, RH # it's already in 3NF
     minimal_cover = getMinimalCover(LH, RH)
 
     min_cover = [fd.split("->") for fd in minimal_cover] # split the left and right hand sides
@@ -330,14 +372,112 @@ def third_normal(LH, RH):
         else:
             third_norm[item[0]] = item[1]
 
-    LH = third_norm.keys()
-    RH = [third_norm[item] for item in LH]
-    
-    threenf = []
+    LHCopy = third_norm.keys()
+    RHCopy = [third_norm[item] for item in LHCopy]
+
+
+    decomp = [] # fill decomp
+    for item in third_norm:
+        decomp.append(relation())
+        decomp[-1].attributes = set(item).union(set(third_norm[item]))
+        decomp[-1].keys = set(item)
+
+    # ensure losslessness:
+    # TODO: FINISH THE CHECK DEPENDENCY FUNCTION!
+    if not checkDependency(decomp, LH,  RH):
+        key = find_key(LH,RH, f) # will add the first key it finds into the relation
+        decomp.append(relation())
+        decomp[-1].attributes = set(key)
+        decomp[-1].keys = set(key)
+
+    for rel in decomp:
+    # will print attributes, key and FDs. To print only Fds, use rel.printFDs()
+        print rel
+
+    return decomp
+
+#==============================================================================#
+# bcnf(LH, RH, f)
+# bcnf decomposition.
+# arguments: LH: left hand side of FD, RH: Right hand side of FD, F: original schema
+# returns: -decomp -  a list of decomposed relations.
+#          - whether decomposition is dependency preserving (True or False).
+#==============================================================================#
+def bcnf(LH, RH, f):
+    v = check_bcnf(LHCopy,RHCopy,f) #check if any FDs violate BCNF
+
+    current = relation()
+    current.add_FDs(LH,RH)
+    current.attributes = set(f)
+
+    decomp = []
+
+    while v:
+        decomp.append(relation())
+
+        # always chooses the first violating fd found.
+        decomp[-1].key = current[v[0]][0].split() #LHs of violating FD
+        decomp[-1].attributes = set((LHCopy[v[0]] + RHCopy[v[0]]).split())
+        decomp.FDs.append(current[v[0]])
+
+        current.FDs.pop(v[0])
+
+        fRemove = []
+
+        updatedList = list(current.FDs)#removing items while using as loop control will cause errors
+
+        for fd in range len(decomp[-1].FDs[1]):
+            # remove attributes
+            for i in len(fd):
+                current.attributes.discard(i)
+
+                # remove FDs where parts of the left are missing
+                for j current.FDs:
+                    if i in j[0]:
+                        updatedList.remove(j)
+                # remove attributes not in F2 from right side
+                    if i in j[1]:
+                        j[1].replace(i, '')
+
+        current.FDs = updatedList
+        updatedList = list()
+
+        violating = check_bcnf(current.FDs[0], current.FDs[1], current.attributes)
+
+    decomp.append(current)
+
+    DependPres = checkDependency(decomp, LH, RH) # will add function later.
+
+    for r in decomp: # for debugging
+        print r
+
+    return decomp, DependPres
+
+
+#==============================================================================#
+# checkDependency(decomp, LH, RH)
+# checks if decomposition is dependency preserving.
+# arguments: Decomp - a list of decomposed relalations. LH, RH: FDs of original schema
+# returns: True or False
+#==============================================================================#
+# TODO: finish writing
+def checkDependency(decomp, LH, RH):
+    f1 = {}
+    f2 = {}
+
     for i in range(len(LH)):
-        threenf.append(LH[i]+'->'+RH[i])
-    return  threenf, LH, RH
-        
+        f1.add((LH[i],RH[i]))
+    for rel in decomp:
+        f2.add(rel.FDs)
+
+    if f1 == f2:
+        return True
+
+    # check if f2 in f1+
+    # find f1+
+
+    return False
+
 #=============================================================================#
 # output_schema
 # creates a view of the output of the normalized data
@@ -348,7 +488,7 @@ def output_schema(LH, RH, file_num):
     r = set(r)
     r_list = list(r)
     r = ''.join(r_list)
-  
+
     inp = 'INPUT_R'+str(file_num)
     name = 'OUTPUT_R'+str(file_num)+'_'+r
     sql = 'create view '+name+' AS '+'SELECT '
@@ -360,7 +500,7 @@ def output_schema(LH, RH, file_num):
     drop = "DROP VIEW IF EXISTS "+name
 
     c.execute(drop)
-    c.execute(sql)    
+    c.execute(sql)
 #=============================================================================#
 # output_FD
 # creates a view of the output of the normalized functional dependancies
@@ -370,30 +510,30 @@ def output_FD(LH, RH, file_num):
     r = ''.join(r)
     r = set(r)
     r_list = list(r)
-    r = ''.join(r_list)    
+    r = ''.join(r_list)
     name = 'OUTPUT_FDs_R'+str(file_num)+'_'+r
     inp = 'INPUT_FDs_R'+str(file_num)
     sql = 'create view '+name+' AS SELECT LHS, RHS FROM '
     sql+= inp+';'
     #print sql
     drop = "DROP VIEW IF EXISTS "+name
-  
+
     c.execute(drop)
-    c.execute(sql)     
-              
+    c.execute(sql)
+
 #=============================================================================#
 # pickRelation
-# lists all the relation in the database 
+# lists all the relation in the database
 # asks user to pick a relation
 #=============================================================================#
 def pickRelation():
     #ask user to choose a relation R
-    # GET TABLE NAMES                                                                            
+    # GET TABLE NAMES
     c.execute("SELECT name FROM sqlite_master;")
     table_names = c.fetchall()
-    #print table_names                                                                           
-    
-    # 1 list the table names                                                                  
+    #print table_names
+
+    # 1 list the table names
     table = []
     for i in range(len(table_names)):
         for j in range(len(table_names[i])):
@@ -402,11 +542,11 @@ def pickRelation():
                 splitname = name.split('_')
                 table.append(splitname[1])
     print 'All relations: ', table
-    
+
     while True:
         # prompt user to pick a relation
         relation_num = raw_input('Pick a table by entering its number: ')
-        
+
         #check if they picked a valid number
         s = 'R'+relation_num
         exist = False
@@ -417,11 +557,11 @@ def pickRelation():
             return relation_num
         else:
             print 'Relation does not exist! Pick again'
-    
-    
+
+
 ############################
 #         MAIN             #
-############################  
+############################
 
 #db = raw_input('HELLO! Please enter the database name: ')
 #conn = sqlite3.connet(db)
@@ -441,7 +581,7 @@ c = conn.cursor()
 #getMinimalCover(L,R)
 #TNF, LH, RH = third_normal(L, R)
 #output_schema(LH, RH, relation)
-#output_FD(LH, RH, relation) 
+#output_FD(LH, RH, relation)
 
 # prompt user to pick an action:
 # 1.3NF
@@ -449,24 +589,24 @@ c = conn.cursor()
 # 3.Get Closure of an attribute. Have user specify an attribute set, tables(union of these tables as F)
 # 4.Check equivalency F1 and F2. Get minimal cover of F1 and F2 and see if they are the same??
 while True:
-    
+
     print "Available Operations: \n[1] 3NF\n[2] BCNF\n[3] Get Closure\n[4] Check Equivalency of F1 and F2"
     op = raw_input("Please enter an operation or 'quit' to quit: ").lower()
-    
+
     if op == '1':
         #ask user to pick relation
         relation = pickRelation()
-        
+
         # spits the fd into 2 lists
-        L,R = getRelationalSchema(relation)     
-        
+        L,R = getRelationalSchema(relation)
+
         #get 3NF
         TNF,LH,RH = third_normal(L,R)
-        
+
         #
         output_schema(LH, RH, relation)
-        output_FD(LH, RH, relation)         
-        
+        output_FD(LH, RH, relation)
+
     elif op == '2':
         pass
     elif op == '3':
@@ -474,22 +614,22 @@ while True:
         a=raw_input("Enter attribute set: ").upper()
         print
         a_set = set()
-        
+
         for letter in a:
             a_set.add(letter)
         t=raw_input("Enter table numbers in the format '1,2,4': ")
         tables = t.split(',')
-        
+
         #add all FDs together
         l = []
-        r = []        
+        r = []
         for table in tables:
             table_l, table_r = getRelationalSchema(table)
             l+=table_l
             r+=table_r
         #print 'lhs',l
         #print 'rhs',r
-        
+
         #convert lhs and rhs into singleton list of sets
         sl,sr = getSingleton(l,r)
         #print 'singleton l',sl
@@ -500,36 +640,36 @@ while True:
         print '==================================================================='
         print 'Closure of '+a+' with relation(s) '+ t+':' , list(closure)
         print '==================================================================='
-        
-   
+
+
     elif op == '4':
         #prompt user to pick 2 tables
         print 'Pick F1'
         f1 = pickRelation()
-        
+
         print 'Pick F2'
         f2 = pickRelation()
-        
+
         #get min cover of F1, get min cover of F2
         F1L,F1R = getRelationalSchema(f1)
         F2L,F2R = getRelationalSchema(f2)
         F1 = getMinimalCover(F1L,F1R)
         F2 = getMinimalCover(F2L,F2R)
-        
+
         #compare the 2 min covers and see if they are the same!
         equivalent = True
         for item in F1:
             if item not in F2:
                 equivalent = False
         print '==================================================================='
-        
+
         if equivalent:
             print 'Equivalent!'
         else:
             print 'Not equivalent!'
         print '==================================================================='
-        
-        
+
+
     elif op == 'quit':
         break
     else:
