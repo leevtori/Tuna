@@ -33,7 +33,7 @@ class relations:
 #=============================================================================#
 #getRelationalSchema(relation)
 #gets the colums of the table specified
-#returns: 
+#returns:
 # LHS of FDs of the relation (list of strings )
 # RHS of FDs of the relation (list of strings)
 # All column names of relation (list of strings)
@@ -43,12 +43,12 @@ class relations:
 
 def getRelationalSchema(relation):
     table_name = 'Input_R'+str(relation)
-    
+
     # GET COLUMN NAMES
     sql = "PRAGMA table_info("+table_name+");"
     c.execute(sql)
     cols = c.fetchall()
-    
+
     # This is the list of column names
     col_names = []
     col_types = []
@@ -312,6 +312,7 @@ def addtoset(set1,set2):
         set2.add(letter)
 
 
+
 #==============================================================================#
 # findPrime(LH, RH, f)
 # Finds the prime attributes of the relation.
@@ -388,6 +389,7 @@ def check_bcnf(LH,RH,F):
     violating =[]
     for i in range(len(LH)):
         closureX = getClosure(LH[i], LH, RH)
+
         if len(closureX) == len(F): # if LH is a key
             continue
 
@@ -399,24 +401,23 @@ def check_bcnf(LH,RH,F):
 
 #==============================================================================#
 # check_3nf(LH, RH, F)
-# checks if F is in 3nf. First checks if F is in BCNF. If yes, the function will
-# return True, else, it will check if RH of violating FDs are prime attributes.
-# The function will call findPrime to find the prime attributes.
+# checks if F is already in 3nf. First checks if F is in BCNF. If yes, the function will
+# return True, else, it will check if RH of violating FDs are prime attributes
+# by calling the function find_prime.
 # parameters: LH - left hand side of FDs
 #             RH - right hands side of FDs
 #             F - all attributes
 # Returns: True if not violating, False if violating
 #==============================================================================#
 def check_3nf(LH,RH,F):
-    violating = check_bcnf(LH,RH,F)
+    violating, prime = check_bcnf(LH, RH, F)
     if not violating: # checks if there are any FDs that violate BCNF
         return True
 
-    # find the prime attributes
-    prime = findPrime(LH, RH, F)
-
     for fd in violating:
-        if len(set(RH[fd]).intersection(prime)) != len(RH[fd]):
+        if len(set(RH[fd]).intersection(prime)) == len(RH[i]):
+            continue
+        else:
             return False
     return True
 
@@ -424,11 +425,12 @@ def check_3nf(LH,RH,F):
 # third_normal(minimal_cover)
 # Finds 3NF given the minimal cover.
 # paramters: minimal_cover : minimal cover of F
-# returns: decomp - a list of decomposed relations.
+# returns: LH - left hand side of FDs after decomposition
+#          RH - right hand side  of FDs after decomposition
 #==============================================================================#
 def third_normal(LH, RH, f):
-    if check_3nf(LH, RH, f):
-        return LH, RH # it's already in 3NF
+    #if check_3nf(LH, RH, f):
+        #return LH, RH # it's already in 3NF
     minimal_cover = getMinimalCover(LH, RH)
 
     min_cover = [fd.split("->") for fd in minimal_cover] # split the left and right hand sides
@@ -454,8 +456,7 @@ def third_normal(LH, RH, f):
         decomp[-1].FDs.append((item, third_norm[item]))
 
     # ensure losslessness:
-    # TODO: FINISH THE CHECK DEPENDENCY FUNCTION!
-    if not checkDependency(decomp, LH,  RH):
+    if not checkDependency(decomp, LH,  RH, f):
         key = find_key(LH,RH, f) # will add the first key it finds into the relation
         decomp.append(relations())
         decomp[-1].attributes = set(key)
@@ -478,8 +479,14 @@ def bcnf(LH, RH, f):
     current.attributes = set(f)
 
     decomp = []
-
+    print "Debug info" #NOTE: remove later
     while v:
+        print v
+        print "decomposing on", current.FDs[v[0]]
+        current.print_rel()
+
+        print "*"*80
+
         decomp.append(relations())
 
         # always chooses the first violating fd found.
@@ -497,13 +504,19 @@ def bcnf(LH, RH, f):
             for i in x:
                 current.attributes.discard(i)
 
-                # remove FDs where parts of the left are missing
-                for j in current.FDs:
-                    if i in j[0]:
-                        updatedList.remove(j)
-                # remove attributes not in F2 from right side
-                    if i in j[1]:
-                        j[1].replace(i, '')
+        # remove FDs where parts of the left are missing
+        for fd in current.FDs:
+            for attri in fd[0]:
+                if attri not in current.attributes:
+                    updatedList.remove(fd)
+
+        # remove attributes not in F2 from right side current.attributes
+            for attri in fd[1]:
+                if attri not in current.attributes:
+                    temp = list(fd)
+                    temp[1] = temp[1].replace(attri, '')
+                    updatedList.insert(current.FDs.index(fd), tuple(temp))
+                    updatedList.remove(fd)
 
         current.FDs = updatedList
         updatedList = list()
@@ -521,7 +534,7 @@ def bcnf(LH, RH, f):
 
     decomp.append(current)
 
-    DependPres = checkDependency(decomp, LH, RH) # will add function later.
+    DependPres = checkDependency(decomp, LH, RH, f)
 
     return decomp, DependPres
 
@@ -530,33 +543,38 @@ def bcnf(LH, RH, f):
 # checks if decomposition is dependency preserving.
 # arguments: Decomp - a list of decomposed relalations. LH, RH: FDs of original schema
 # returns: True or False
-# https://www.youtube.com/watch?v=9PZzyMhQViw
 #==============================================================================#
-# TODO: finish writing
-def checkDependency(decomp, LH, RH):
-    f1 = set()
-    f2 = set()
-
-    for i in range(len(LH)):
-        f1.add((LH[i],RH[i]))
-    for rel in decomp:
-        for fd in rel.FDs:
-            f2.add(fd)
+def checkDependency(decomp, LH, RH, R):
+    decompLH = []
+    decompRH = []
 
 
-    if f1 == f2:
+    # convert form.
+    for r in decomp:
+        for fd in r.FDs:
+            decompLH.append(fd[0])
+            decompRH.append(fd[1])
+
+    #check if all FDs of R are in decomp
+    if decompLH == LH and decompRH == RH:
         return True
 
-    # check if f2 in f1+
-    # find f1+
+    # if not, check decomp+
+    closureDecomp = set()
+    for i in range(len(decompLH)):
+        closureDecomp = closureDecomp | getClosure(decompLH[i], decompRH[i], R)
 
-    return False
+    for i in range(len(LH)):
+        setFD = set(LH[i]+RH[i])
+        if setFD & closureDecomp != setFD:
+            return False
 
+    return True
 #=============================================================================#
 # output_schema
 # creates a view of the output of the normalized data
 # relation is a set of attributes that is returned, from that we can get the fds
-# and keys 
+# and keys
 #=============================================================================#
 def output_schema(relation, table_num, col_names, col_types):
     print 'names',col_names
@@ -572,7 +590,7 @@ def output_schema(relation, table_num, col_names, col_types):
         inp = 'INPUT_R'+str(table_num) #input_R1_AD
         outp = 'OUTPUT_R'+str(table_num)+'_'+attri_string #output_R1_AD
         sql = 'CREATE TABLE '+outp+'('
-        #create empty table input_R1_AD 
+        #create empty table input_R1_AD
         r_cols=[]
         for attri in attri_string:
             l = attri.split()
@@ -589,10 +607,10 @@ def output_schema(relation, table_num, col_names, col_types):
         print 'drop ', drop
         print 'sql ',sql
         c.execute(drop)
-        c.execute(sql) 
-    
+        c.execute(sql)
+
         #populate output table with data from inp
-        
+
         #insert into output_R1_ABC (A,B,C) select A,B,C from Input_R1;
         ins = 'INSERT INTO '+outp+' ('
         r_col_str = ''
@@ -602,15 +620,15 @@ def output_schema(relation, table_num, col_names, col_types):
         ins += r_col_str+') SELECT '+r_col_str+' from '+inp+';'
         print 'ins', ins
         c.execute(ins)
-        
-         
+
+
         print
- 
-     
-        
-        
-        
-        
+
+
+
+
+
+
 #=============================================================================#
 # output_FD
 # creates a view of the output of the normalized functional dependancies
@@ -619,33 +637,33 @@ def output_schema(relation, table_num, col_names, col_types):
 def output_FD(relation, file_num):
     # r is the attributes of a relation
     for r in relation:
-        attributes = r.attributes 
+        attributes = r.attributes
         attributes = ''.join(attributes)
-       
+
         name = 'OUTPUT_FDs_R'+str(file_num)+'_'+str(attributes)
         print name
-        
+
         #drops the table if it already exists
         drop = 'DROP TABLE IF EXISTS '+name+';'
         print drop
         c.execute(drop)
-        
+
         # createst the tables
         sql = 'CREATE TABLE '+name+' ( LHS TEXT, RHS TEXT);'
         print sql
         c.execute(sql)
-        
-        fds = r.FDs  # this is a list of tuples 
+
+        fds = r.FDs  # this is a list of tuples
         for fd in fds:
             #if fd is empty, skip
-            if len(fd)<1: 
-                continue            
+            if len(fd)<1:
+                continue
             l=fd[0]
             r=fd[1]
-        
+
             sql = 'INSERT INTO '+name+' VALUES ('+'"'+str(l)+'"'+','+'"'+str(r)+'"'+');'
             print sql
-            c.execute(sql)   
+            c.execute(sql)
 
 #=============================================================================#
 # pickRelation
@@ -730,14 +748,10 @@ while True:
         all_relations = third_normal(L,R, col_names)
 
         # The output data in its proper format
-<<<<<<< HEAD
+
         output_schema(all_relations, relation, col_names, col_types)
         ##output_FD(all_realtions, relation)
         conn.commit()
-=======
-        #output_schema(all_relations, relation)
-        output_FD(all_relations, relation)
->>>>>>> 810fdacbeccae0eecfc8dcf654e1b86d254fd717
 
     elif op == '2':
         pass
