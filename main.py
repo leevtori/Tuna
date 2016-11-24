@@ -33,26 +33,32 @@ class relations:
 #=============================================================================#
 #getRelationalSchema(relation)
 #gets the colums of the table specified
-#returns 2 lists, LHS, RHS attributes
+#returns: 
+# LHS of FDs of the relation (list of strings )
+# RHS of FDs of the relation (list of strings)
+# All column names of relation (list of strings)
+# Corresponding column types of the relation (list of strings)
 #parameters: relation, is the number the user enters which specifies which table
 #=============================================================================#
 
 def getRelationalSchema(relation):
-    table_name = 'Input_R'+relation
+    table_name = 'Input_R'+str(relation)
+    
     # GET COLUMN NAMES
-    sql = "PRAGMA table_info("+table_name+")"
+    sql = "PRAGMA table_info("+table_name+");"
     c.execute(sql)
-    col_names = c.fetchall()
-    #print col_names
+    cols = c.fetchall()
+    
     # This is the list of column names
-    col= []
-    for i in range (len(col_names)):
-        col.append(str(col_names[i][1]))
-    #print 'Columns of R'+relation,col
+    col_names = []
+    col_types = []
+    for i in range (len(cols)):
+        col_names.append(str(cols[i][1]))
+        col_types.append(str(cols[i][2]))
 
     # GET FUNCTIONAL DEPENDENCIES
     # get LHS
-    table_fds = 'Input_FDs_R'+relation
+    table_fds = 'Input_FDs_R'+str(relation)
     sql = "select LHS from "+table_fds+";"
     c.execute(sql)
     lhs = c.fetchall()
@@ -69,7 +75,7 @@ def getRelationalSchema(relation):
         for j in range(len(rhs[i])):
             RHS.append(''.join(str(rhs[i][j]).split(',')))
 
-    return LHS,RHS, col
+    return LHS,RHS, col_names, col_types
 
 #=============================================================================#
 #getMinimalCover(left, right)
