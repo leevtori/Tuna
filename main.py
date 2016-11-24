@@ -581,34 +581,34 @@ def output_schema(relation, file_num):
 # output_FD
 # creates a view of the output of the normalized functional dependancies
 #=============================================================================#
+
 def output_FD(relation, file_num):
-    def output_FD(relation, file_num):
-        # r is the attributes of a relation
-        for r in relation:
-            attributes = r.attributes 
-            attributes = ''.join(attributes)
-           
-            name = 'OUTPUT_FDs_R'+str(file_num)+'_'+str(attributes)
-            print name
-            
-            #drops the table if it already exists
-            drop = 'DROP TABLE IF EXISTS '+name+';'
-            print drop
-            c.execute(drop)
-            
-            # createst the tables
-            sql = 'CREATE TABLE '+name+' ( LHS TEXT, RHS TEXT);'
+    # r is the attributes of a relation
+    for r in relation:
+        attributes = r.attributes 
+        attributes = ''.join(attributes)
+       
+        name = 'OUTPUT_FDs_R'+str(file_num)+'_'+str(attributes)
+        print name
+        
+        #drops the table if it already exists
+        drop = 'DROP TABLE IF EXISTS '+name+';'
+        print drop
+        c.execute(drop)
+        
+        # createst the tables
+        sql = 'CREATE TABLE '+name+' ( LHS TEXT, RHS TEXT);'
+        print sql
+        c.execute(sql)
+        
+        fds = r.FDs  # this is a list of tuples 
+        for fd in fds:
+            l=fd[0]
+            r=fd[1]
+            print l, r
+            sql = 'INSERT INTO '+name+' VALUES ('+'"'+str(l)+'"'+','+'"'+str(r)+'"'+');'
             print sql
-            c.execute(sql)
-            
-            fds = r.FDs  # this is a list of tuples 
-            for fd in fds:
-                l=fd[0]
-                r=fd[1]
-                print l, r
-                sql = 'INSERT INTO '+name+' VALUES ('+'"'+str(l)+'"'+','+'"'+str(r)+'"'+');'
-                print sql
-                c.execute(sql)   
+            c.execute(sql)   
 
 #=============================================================================#
 # pickRelation
