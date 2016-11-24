@@ -615,21 +615,37 @@ def output_schema(relation, table_num, col_names, col_types):
 # output_FD
 # creates a view of the output of the normalized functional dependancies
 #=============================================================================#
-def output_FD(relation, file_num):
-    r = LH + RH
-    r = ''.join(r)
-    r = set(r)
-    r_list = list(r)
-    r = ''.join(r_list)
-    name = 'OUTPUT_FDs_R'+str(file_num)+'_'+r
-    inp = 'INPUT_FDs_R'+str(file_num)
-    sql = 'create view '+name+' AS SELECT LHS, RHS FROM '
-    sql+= inp+';'
-    #print sql
-    drop = "DROP VIEW IF EXISTS "+name
 
-    c.execute(drop)
-    c.execute(sql)
+def output_FD(relation, file_num):
+    # r is the attributes of a relation
+    for r in relation:
+        attributes = r.attributes 
+        attributes = ''.join(attributes)
+       
+        name = 'OUTPUT_FDs_R'+str(file_num)+'_'+str(attributes)
+        print name
+        
+        #drops the table if it already exists
+        drop = 'DROP TABLE IF EXISTS '+name+';'
+        print drop
+        c.execute(drop)
+        
+        # createst the tables
+        sql = 'CREATE TABLE '+name+' ( LHS TEXT, RHS TEXT);'
+        print sql
+        c.execute(sql)
+        
+        fds = r.FDs  # this is a list of tuples 
+        for fd in fds:
+            #if fd is empty, skip
+            if len(fd)<1: 
+                continue            
+            l=fd[0]
+            r=fd[1]
+        
+            sql = 'INSERT INTO '+name+' VALUES ('+'"'+str(l)+'"'+','+'"'+str(r)+'"'+');'
+            print sql
+            c.execute(sql)   
 
 #=============================================================================#
 # pickRelation
@@ -714,9 +730,14 @@ while True:
         all_relations = third_normal(L,R, col_names)
 
         # The output data in its proper format
+<<<<<<< HEAD
         output_schema(all_relations, relation, col_names, col_types)
         ##output_FD(all_realtions, relation)
         conn.commit()
+=======
+        #output_schema(all_relations, relation)
+        output_FD(all_relations, relation)
+>>>>>>> 810fdacbeccae0eecfc8dcf654e1b86d254fd717
 
     elif op == '2':
         pass
