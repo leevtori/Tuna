@@ -7,15 +7,15 @@ import re
 
 #==============================================================================#
 # A class to hold the relations.
-# Used to store decomposed relations (or any relation)
+# Used to store decomposed relations (or any relation).
 #==============================================================================#
-class relation:
+class relations:
     def __init__(self):
         self.keys = set() # keys of the relation
         self.attributes = set() # all attributes
         self.FDs = [] # functional dependancies in tuples (LH, RH)
 
-    def __repr__(self): # for debugging
+    def print_rel(self): # for debugging
         print "attributes:", self.attributes
         print "keys:", self.keys
         print "Functional Dependancies:"
@@ -68,7 +68,7 @@ def getRelationalSchema(relation):
         for j in range(len(rhs[i])):
             RHS.append(''.join(str(rhs[i][j]).split(',')))
 
-    return LHS,RHS
+    return LHS,RHS, col
 
 #=============================================================================#
 #getMinimalCover(left, right)
@@ -282,7 +282,7 @@ def getClosure(attribute, l_list, r_list):
             #print 'r copy', r_copy
             if r_copy[f] == '':
                 continue
-            elif l_copy[f].issubset(closure_set):
+            elif set(l_copy[f]).issubset(closure_set):
                 #print "issubset"
                 #print r_copy[f]
                 #print r_copy
@@ -305,6 +305,69 @@ def addtoset(set1,set2):
         set2.add(letter)
 
 
+#==============================================================================#
+# findPrime(LH, RH, f)
+# Finds the prime attributes of the relation.
+# Returns: a set of prime attributes.
+# parameters: LH - left hand side of FDs
+#             RH - right hands side of FDs
+#==============================================================================#
+def findPrime(LH, RH, f):
+    keys = find_key(LH,RH,f)
+    prime_attributes = set(''.join(keys))
+    return prime_attributes
+
+#==============================================================================#
+# findKeys(LH, RH, F)
+# Finds all the keys of the relation. All keys are minimal
+# returns: keys -  a list of keys of the realtion.
+# parameters: LH, RH, F. left hand, right hand of FDs and all attributes.
+#==============================================================================#
+def find_key(LH, RH, F):
+    keys = []
+
+    LHS = set(''.join(LH))
+    RHS = set(''.join(RH))
+
+
+    left = LHS - RHS
+    middle = LHS & RHS
+
+    left = ''.join(left)
+
+    # attributes not in any FDs must be in the key.
+
+    otherA = set(F) - (LHS | RHS)
+    left = left + ''.join(otherA)
+
+    # attributes only on the left must be in the key.
+    if left:
+        if getClosure(left, LH, RH) == set(F):
+            keys.append(left)
+            return keys
+
+    middle.add(left)
+
+    for item in powerset(middle):
+        if not item or left not in item:
+            continue
+
+        closureX = getClosure(''.join(item), LH, RH)
+        if closureX == F:
+            keys.append(''.join(i))
+
+    minimal = len(keys[0])
+
+    for i in range(1,len(keys)):
+        if len(keys[i]) > minimal:
+            return keys[:i]
+
+    return keys
+
+# function from https://docs.python.org/2/library/itertools.html
+def powerset(iterable):
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
 #==============================================================================#
 # check_bcnf(LH, RH, F)
@@ -378,21 +441,22 @@ def third_normal(LH, RH, f):
 
     decomp = [] # fill decomp
     for item in third_norm:
-        decomp.append(relation())
+        decomp.append(relations())
         decomp[-1].attributes = set(item).union(set(third_norm[item]))
         decomp[-1].keys = set(item)
+        decomp[-1].FDs.append((item, third_norm[item]))
 
     # ensure losslessness:
     # TODO: FINISH THE CHECK DEPENDENCY FUNCTION!
     if not checkDependency(decomp, LH,  RH):
         key = find_key(LH,RH, f) # will add the first key it finds into the relation
-        decomp.append(relation())
+        decomp.append(relations())
         decomp[-1].attributes = set(key)
         decomp[-1].keys = set(key)
 
+    # to check. remove later!
     for rel in decomp:
-    # will print attributes, key and FDs. To print only Fds, use rel.printFDs()
-        print rel
+        rel.print_rel()
 
     return decomp
 
@@ -406,14 +470,14 @@ def third_normal(LH, RH, f):
 def bcnf(LH, RH, f):
     v = check_bcnf(LHCopy,RHCopy,f) #check if any FDs violate BCNF
 
-    current = relation()
+    current = relations()
     current.add_FDs(LH,RH)
     current.attributes = set(f)
 
     decomp = []
 
     while v:
-        decomp.append(relation())
+        decomp.append(relations())
 
         # always chooses the first violating fd found.
         decomp[-1].key = current[v[0]][0].split() #LHs of violating FD
@@ -426,13 +490,13 @@ def bcnf(LH, RH, f):
 
         updatedList = list(current.FDs)#removing items while using as loop control will cause errors
 
-        for fd in range len(decomp[-1].FDs[1]):
+        for fd in decomp[-1].FDs[1]:
             # remove attributes
             for i in len(fd):
                 current.attributes.discard(i)
 
                 # remove FDs where parts of the left are missing
-                for j current.FDs:
+                for j in current.FDs:
                     if i in j[0]:
                         updatedList.remove(j)
                 # remove attributes not in F2 from right side
@@ -449,7 +513,7 @@ def bcnf(LH, RH, f):
     DependPres = checkDependency(decomp, LH, RH) # will add function later.
 
     for r in decomp: # for debugging
-        print r
+        r.print_rel()
 
     return decomp, DependPres
 
@@ -462,13 +526,15 @@ def bcnf(LH, RH, f):
 #==============================================================================#
 # TODO: finish writing
 def checkDependency(decomp, LH, RH):
-    f1 = {}
-    f2 = {}
+    f1 = set()
+    f2 = set()
 
     for i in range(len(LH)):
         f1.add((LH[i],RH[i]))
     for rel in decomp:
-        f2.add(rel.FDs)
+        for fd in rel.FDs:
+            f2.add(fd)
+
 
     if f1 == f2:
         return True
