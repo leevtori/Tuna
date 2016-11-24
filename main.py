@@ -87,30 +87,21 @@ def getRelationalSchema(relation):
 def getMinimalCover(left, right):
     #step 1: right hand side singleton
     l, r = getSingleton(left, right)
-    #print 'singleton'
-    #print l
-    #print r
 
     #step 2: left hand side extraneous attributes
     newl,newr=step2(l, r) #manipulates l and r
-    #print 'Step 2: Removed LHS extraneous attributes'
-    #print 'new l',newl,'\nnew r',newr
 
     #step 3: Remove redundant FD's
     rl,rr = step3(newl,newr)
     left, right = convert_to_list(rl, rr)
-    #print 'Step 3: Removed redundant FDs'
-    #print left
-    #print right
-
 
     # Combine into functional dependancies, and return the minimal cover FD
     minimal_FD = []
     for i in range(len(left)):
         minimal_FD.append(left[i]+'->'+right[i])
-    print '==================================================================='
-    print 'Minimal Cover', minimal_FD, '\n'
-    print '==================================================================='
+    #print '==================================================================='
+    #print 'Minimal Cover', minimal_FD, '\n'
+    #print '==================================================================='
 
     return minimal_FD
 
@@ -156,7 +147,6 @@ def getSingleton(oldLeft, oldRight):
                 singleton.append(oldLeft[i]+'->'+oldRight[i][letter])
         else:
             singleton.append(oldLeft[i]+'->'+oldRight[i])
-    #print 'singleton LIST',singleton
 
     # turn into list of sets
     newLeft = []
@@ -193,8 +183,6 @@ def step2(L_list, R_list):
     for j in range(len(L_list)):
         if len(L_list[j])>1:
             remove_redundancy(L_list[j], R_list[j], L_list, R_list)
-            #print '\nl list removed redundancy ',L_list,'\n'
-            #print '\nr list removed redundancy', R_list
     return L_list, R_list
 
 #=============================================================================#
@@ -207,29 +195,21 @@ def step2(L_list, R_list):
 def step3(l_list, r_list):
     reduced_l_list = []
     reduced_r_list = []
-    #print 'reduced l list', reduced_l_list
-    #print 'reduced r list', reduced_r_list
     #removed redundant FDs
     for i in range(len(l_list)):
     #find closure of current FD (exclude current FD)
-        #print 'STEP 3 INDEX ', i
         l_copy = list(l_list)
         r_copy = list(r_list)
-        #print 'STEP 3 l copy', l_copy
-        #print 'STEP 3 r copy', r_copy
         l_copy.pop(i)
         r_copy.pop(i)
-        #print 'STEP 3 l copy removed 1 fd', l_copy
-        #print 'STEP 3 r copy removed 1 fd', r_copy
         closure = getClosure(l_list[i],l_copy, r_copy)
-        #print "closure of T-",l_list[i],"->",r_list[i],closure
         #if RHS of FD is not in the closure, then this FD is not redundant, add it to reduced lists
         if not r_list[i].issubset(closure):
             reduced_l_list.append(l_list[i])
             reduced_r_list.append(r_list[i])
-            #print "** reduced fd list", reduced_l_list
-            #print "** reduced fd list", reduced_r_list
     return reduced_l_list, reduced_r_list
+
+
 #=============================================================================#
 # remove_redundancy(LHS, RHS, l_list, r_list)
 # removes any redundant letters on the lhs of an FD
@@ -248,22 +228,11 @@ def remove_redundancy(LHS, RHS, l_list, r_list):
     for letter in LHS_copy:
         attribute = LHS_copy.difference(letter)
         closure = getClosure(attribute, l_list, r_list)
-        #print attribute,"closure: ", closure
         # save the closures, per attriute
         if RHS.issubset(closure):
-            #print "removed", letter
-
             LHS.remove(letter)
-            #print "remaining", LHS
             l_list[i] = LHS
 
-
-    #print "from remove_redundancy", closure
-
-#gets closure of a set of attributes
-#atribute is a set {'A','B','C'}
-#l_list is a list of LHS FDs
-#r_list is the corresponding list of RHS FDs
 
 #=============================================================================#
 # getClosure(attribute, l_list, r_list)
@@ -278,25 +247,15 @@ def getClosure(attribute, l_list, r_list):
     closure_set = set()
     addtoset(attribute, closure_set)
 
-
     added=True
     while added == True:
         added = False
         for f in range(len(l_copy)):
-            #print "index", f
-            #print "current closure", closure_set
-            #print 'l copy', l_copy
-            #print 'r copy', r_copy
             if r_copy[f] == '':
                 continue
             elif set(l_copy[f]).issubset(closure_set):
-                #print "issubset"
-                #print r_copy[f]
-                #print r_copy
                 addtoset(r_copy[f],closure_set)
-                #print "added", closure_set
                 r_copy[f]=''
-                #f+=1
                 added = True
             else :
                 continue
@@ -479,13 +438,7 @@ def bcnf(LH, RH, f):
     current.attributes = set(f)
 
     decomp = []
-    print "Debug info" #NOTE: remove later
     while v:
-        print v
-        print "decomposing on", current.FDs[v[0]]
-        current.print_rel()
-
-        print "*"*80
 
         decomp.append(relations())
 
@@ -577,11 +530,8 @@ def checkDependency(decomp, LH, RH, R):
 # and keys
 #=============================================================================#
 def output_schema(relation, table_num, col_names, col_types):
-    print 'names',col_names
-    print 'types',col_types
     for r in relation:
         attributes = r.attributes
-        print 'attributes', attributes
         attri_string = ''
         for a in attributes:
             attri_string+=a
@@ -595,7 +545,6 @@ def output_schema(relation, table_num, col_names, col_types):
         for attri in attri_string:
             l = attri.split()
             r_cols += l
-        print 'r cols', r_cols
         for letter in r_cols:
             l_type = col_types[col_names.index(letter)]
             sql += letter+' '
@@ -604,8 +553,7 @@ def output_schema(relation, table_num, col_names, col_types):
         sql = sql[:-1]
         sql += ');'
         drop = 'DROP TABLE IF EXISTS '+outp+';'
-        print 'drop ', drop
-        print 'sql ',sql
+
         c.execute(drop)
         c.execute(sql)
 
@@ -618,16 +566,8 @@ def output_schema(relation, table_num, col_names, col_types):
             r_col_str += letter+','
         r_col_str = r_col_str[:-1]
         ins += r_col_str+') SELECT '+r_col_str+' from '+inp+';'
-        print 'ins', ins
+
         c.execute(ins)
-
-
-        print
-
-
-
-
-
 
 #=============================================================================#
 # output_FD
@@ -641,16 +581,13 @@ def output_FD(relation, file_num):
         attributes = ''.join(attributes)
 
         name = 'OUTPUT_FDs_R'+str(file_num)+'_'+str(attributes)
-        print name
 
         #drops the table if it already exists
         drop = 'DROP TABLE IF EXISTS '+name+';'
-        print drop
         c.execute(drop)
 
         # createst the tables
         sql = 'CREATE TABLE '+name+' ( LHS TEXT, RHS TEXT);'
-        print sql
         c.execute(sql)
 
         fds = r.FDs  # this is a list of tuples
@@ -662,7 +599,6 @@ def output_FD(relation, file_num):
             r=fd[1]
 
             sql = 'INSERT INTO '+name+' VALUES ('+'"'+str(l)+'"'+','+'"'+str(r)+'"'+');'
-            print sql
             c.execute(sql)
 
 #=============================================================================#
@@ -675,7 +611,6 @@ def pickRelation():
     # GET TABLE NAMES
     c.execute("SELECT name FROM sqlite_master;")
     table_names = c.fetchall()
-    #print table_names
 
     # 1 list the table names
     table = []
@@ -710,22 +645,11 @@ def pickRelation():
 #db = raw_input('HELLO! Please enter the database name: ')
 #conn = sqlite3.connet(db)
 
+#NOTE: Remove later
 #for testing only, delete this before we submit
 conn = sqlite3.connect('MiniProject2-InputExample.db')
 
 c = conn.cursor()
-
-#ask user to pick relation
-#relation = pickRelation()
-
-# spits the fd into 2 lists
-#L,R = getRelationalSchema(relation)
-
-#get minimal cover of FDs
-#getMinimalCover(L,R)
-#TNF, LH, RH = third_normal(L, R)
-#output_schema(LH, RH, relation)
-#output_FD(LH, RH, relation)
 
 # prompt user to pick an action:
 # 1.3NF
@@ -737,24 +661,54 @@ while True:
     print "Available Operations: \n[1] 3NF\n[2] BCNF\n[3] Get Closure\n[4] Check Equivalency of F1 and F2"
     op = raw_input("Please enter an operation or 'quit' to quit: ").lower()
 
-    if op == '1':
-        #ask user to pick relation ***relation here means: table number***
-        relation = pickRelation()
+    if op == '1': #3NF
+        #ask user to pick table number
+        table_num = pickRelation()
 
         # spits the fd into 2 lists
-        L,R, col_names, col_types = getRelationalSchema(relation)
+        L,R, col_names, col_types = getRelationalSchema(table_num)
 
         #get 3NF
         all_relations = third_normal(L,R, col_names)
-
+        print '==================================================================='
+        for r in all_relations:
+            r.print_rel()
+        
         # The output data in its proper format
+        change = ''
+        while change != 'y' or 'n': 
+            change = raw_input("Do you want to add output to the database? (y/n): ")
+        if change == 'y':
+            output_schema(all_relations, table_num, col_names, col_types)
+            output_FD(all_relations, table_num)
+            conn.commit()
+        else:
+            print "You database was not changed."
+        print '==================================================================='
 
-        output_schema(all_relations, relation, col_names, col_types)
-        ##output_FD(all_realtions, relation)
-        conn.commit()
-
-    elif op == '2':
-        pass
+            
+    elif op == '2': #BCNF
+        #ask user to pick relation ***relation here means: table number***
+        table_num = pickRelation()
+    
+        # spits the fd into 2 lists
+        L,R, col_names, col_types = getRelationalSchema(table_num)
+    
+        #get BCNF
+        all_relations, depen_pres = bcnf(L,R, col_names)
+        print '==================================================================='
+        if depen_pres:
+            print 'Decomposition of R'+table_num+' is dependency preserving.'
+        else:
+            print 'Decomposition of R'+table_num+' is NOT dependency preserving.'
+        print '==================================================================='
+        # The output data in its proper format
+    
+        output_schema(all_relations, table_num, col_names, col_types)
+        output_FD(all_relations, table_num)
+        conn.commit()        
+        
+        
     elif op == '3':
         #get attribute set and tables
         a=raw_input("Enter attribute set: ").upper()
@@ -763,6 +717,21 @@ while True:
 
         for letter in a:
             a_set.add(letter)
+        #print table numbers
+        # GET TABLE NAMES
+        c.execute("SELECT name FROM sqlite_master;")
+        table_names = c.fetchall()
+    
+        # 1 list the table names
+        table = []
+        for i in range(len(table_names)):
+            for j in range(len(table_names[i])):
+                if fnmatch.fnmatch(str(table_names[i][j]),'Input_R*'):
+                    name = str(table_names[i][j])
+                    splitname = name.split('_')
+                    table.append(splitname[1])
+        print 'All relations: ', table      
+            
         t=raw_input("Enter table numbers in the format '1,2,4': ")
         tables = t.split(',')
 
@@ -770,21 +739,18 @@ while True:
         l = []
         r = []
         for table in tables:
-            table_l, table_r = getRelationalSchema(table)
+            table_l, table_r, _,_ = getRelationalSchema(table)
             l+=table_l
             r+=table_r
-        #print 'lhs',l
-        #print 'rhs',r
 
         #convert lhs and rhs into singleton list of sets
         sl,sr = getSingleton(l,r)
-        #print 'singleton l',sl
-        #print 'singleton r',sr
 
         #get closure of F
         closure = getClosure(a_set, sl,sr)
+        
         print '==================================================================='
-        print 'Closure of '+a+' with relation(s) '+ t+':' , list(closure)
+        print 'Closure of '+a+' with FDs of relation(s) '+ t+':' , list(closure)
         print '==================================================================='
 
 
@@ -823,3 +789,5 @@ while True:
         print 'Try again.'
         print
         print
+
+conn.close()
