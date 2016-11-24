@@ -549,13 +549,15 @@ def checkDependency(decomp, LH, RH):
 #=============================================================================#
 # output_schema
 # creates a view of the output of the normalized data
+# relation is a set of attributes that is returned, from that we can get the fds
+# and keys 
 #=============================================================================#
-def output_schema(LH, RH, file_num):
-    r = LH + RH
-    r = ''.join(r)
-    r = set(r)
-    r_list = list(r)
-    r = ''.join(r_list)
+def output_schema(relation, file_num):
+    for r in relation:
+        keys = r.keys
+        attributes = r.attributes
+        fd = r.FDs
+        
 
     inp = 'INPUT_R'+str(file_num)
     name = 'OUTPUT_R'+str(file_num)+'_'+r
@@ -573,7 +575,7 @@ def output_schema(LH, RH, file_num):
 # output_FD
 # creates a view of the output of the normalized functional dependancies
 #=============================================================================#
-def output_FD(LH, RH, file_num):
+def output_FD(relation, file_num):
     r = LH + RH
     r = ''.join(r)
     r = set(r)
@@ -666,14 +668,14 @@ while True:
         relation = pickRelation()
 
         # spits the fd into 2 lists
-        L,R = getRelationalSchema(relation)
+        L,R, COL = getRelationalSchema(relation)
 
         #get 3NF
-        TNF,LH,RH = third_normal(L,R)
+        all_relations = third_normal(L,R, COL)
 
-        #
-        output_schema(LH, RH, relation)
-        output_FD(LH, RH, relation)
+        # The output data in its proper format
+        output_schema(all_relations, relation)
+        output_FD(all_realtions, relation)
 
     elif op == '2':
         pass
