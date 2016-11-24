@@ -676,7 +676,7 @@ while True:
         
         # The output data in its proper format
         change = ''
-        while change != 'y' or 'n': 
+        while (change != 'y' and change != 'n'): 
             change = raw_input("Do you want to add output to the database? (y/n): ")
         if change == 'y':
             output_schema(all_relations, table_num, col_names, col_types)
@@ -701,13 +701,19 @@ while True:
             print 'Decomposition of R'+table_num+' is dependency preserving.'
         else:
             print 'Decomposition of R'+table_num+' is NOT dependency preserving.'
-        print '==================================================================='
         # The output data in its proper format
-    
-        output_schema(all_relations, table_num, col_names, col_types)
-        output_FD(all_relations, table_num)
-        conn.commit()        
-        
+        print
+        change = ''
+        while (change != 'y' and change != 'n'): 
+            change = raw_input("Do you want to add output to the database? (y/n): ")
+        if change == 'y':
+            output_schema(all_relations, table_num, col_names, col_types)
+            output_FD(all_relations, table_num)
+            conn.commit()
+        else:
+            print "You database was not changed."
+        print '==================================================================='
+
         
     elif op == '3':
         #get attribute set and tables
