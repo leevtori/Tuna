@@ -71,17 +71,19 @@ def getMinimalCover(left, right):
     #step 3: Remove redundant FD's
     rl,rr = step3(newl,newr)
     left, right = convert_to_list(rl, rr)
-    print 'Step 3: Removed redundant FDs'
-    print left
-    print right
+    #print 'Step 3: Removed redundant FDs'
+    #print left
+    #print right
     
     
     # Combine into functional dependancies, and return the minimal cover FD
     minimal_FD = []
     for i in range(len(left)):
         minimal_FD.append(left[i]+'->'+right[i])
-
+    print '==================================================================='
     print 'Minimal Cover', minimal_FD, '\n' 
+    print '==================================================================='
+    
     return minimal_FD
 
 #=============================================================================#
@@ -354,7 +356,7 @@ def output_schema(LH, RH, file_num):
         sql+=(i+',')
     sql = sql[:-1]
     sql+=' FROM '+inp+';'
-    print sql
+    #print sql
     drop = "DROP VIEW IF EXISTS "+name
 
     c.execute(drop)
@@ -373,7 +375,7 @@ def output_FD(LH, RH, file_num):
     inp = 'INPUT_FDs_R'+str(file_num)
     sql = 'create view '+name+' AS SELECT LHS, RHS FROM '
     sql+= inp+';'
-    print sql
+    #print sql
     drop = "DROP VIEW IF EXISTS "+name
   
     c.execute(drop)
@@ -519,11 +521,14 @@ while True:
         for item in F1:
             if item not in F2:
                 equivalent = False
+        print '==================================================================='
+        
         if equivalent:
             print 'Equivalent!'
         else:
             print 'Not equivalent!'
-    
+        print '==================================================================='
+        
         
     elif op == 'quit':
         break
