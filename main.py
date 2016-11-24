@@ -6,8 +6,7 @@ from itertools import chain
 import re
 
 
-conn = sqlite3.connect('MiniProject2-InputExample.db')
-c = conn.cursor()
+
 
 #=============================================================================#
 #getRelationalSchema(relation)
@@ -27,7 +26,7 @@ def getRelationalSchema(relation):
     col= []
     for i in range (len(col_names)):
         col.append(str(col_names[i][1]))
-    print 'Columns of R'+relation,col
+    #print 'Columns of R'+relation,col
 
     # GET FUNCTIONAL DEPENDENCIES
     # get LHS
@@ -63,13 +62,11 @@ def getMinimalCover(left, right):
     #print 'singleton'
     #print l
     #print r
-    print
     
     #step 2: left hand side extraneous attributes
     newl,newr=step2(l, r) #manipulates l and r
-    print 'Step 2: Removed LHS extraneous attributes'
-    print 'new l',newl,'\nnew r',newr
-    print
+    #print 'Step 2: Removed LHS extraneous attributes'
+    #print 'new l',newl,'\nnew r',newr
     
     #step 3: Remove redundant FD's
     rl,rr = step3(newl,newr)
@@ -77,7 +74,6 @@ def getMinimalCover(left, right):
     print 'Step 3: Removed redundant FDs'
     print left
     print right
-    print
     
     
     # Combine into functional dependancies, and return the minimal cover FD
@@ -99,10 +95,12 @@ def convert_to_list(rl, rr):
     left = []
     right = []
     for items in rl:
+        items = ''.join(sorted(items)) #change to alphabetical order
         #change type 
         l = list(items)
         left.append(l)   
     for i in rr:
+        i = ''.join(sorted(i))
         r = list(i)
         right.append(r)
     l = []
@@ -115,6 +113,9 @@ def convert_to_list(rl, rr):
 #=============================================================================#
 # getSingleton(oldLeft, oldRight)
 # step one of min cover, seperate all attributes on RHS to single attribute
+#
+# input oldLeft: list of attribute strings e.g.['ABH','EF','S']
+# input oldRight: list of attribute strings
 #=============================================================================#
 
 def getSingleton(oldLeft, oldRight):
@@ -152,6 +153,11 @@ def getSingleton(oldLeft, oldRight):
 #=============================================================================#
 # step2
 # removes the redundancy in the LHS, by callin on remove_redudancy method
+#
+# input L_list: singleton list of sets of lhs attributes
+# input R_list: singleton list of sets of rhs attributes 
+# output L_list: input L_list with redundant lhs attributes removed
+# output R_list: unchanged from input R_list
 #=============================================================================#
 def step2(L_list, R_list):
     for j in range(len(L_list)):
@@ -164,6 +170,9 @@ def step2(L_list, R_list):
 #=============================================================================#
 # step3
 # removes redundant dependancies by comparing the attribute with the closure
+#
+# input l_list: output of step2()
+# input r_list: output of step2()
 #=============================================================================#
 def step3(l_list, r_list):
     reduced_l_list = []
@@ -193,7 +202,14 @@ def step3(l_list, r_list):
     return reduced_l_list, reduced_r_list          
 #=============================================================================#
 # remove_redundancy(LHS, RHS, l_list, r_list)
-# parameters 
+# removes any redundant letters on the lhs of an FD
+# e.g. ABH->C becomes BH->C
+# changes l_list and r_list
+#
+# input LHS: set of lhs attributes
+# input RHS: set of rhs attributes
+# input l_list: same input as step2()
+# input r_list: same input as step2()
 #=============================================================================#
 def remove_redundancy(LHS, RHS, l_list, r_list):
     LHS_copy = set(LHS)
@@ -363,6 +379,11 @@ def output_FD(LH, RH, file_num):
     c.execute(drop)
     c.execute(sql)     
               
+#=============================================================================#
+# pickRelation
+# lists all the relation in the database 
+# asks user to pick a relation
+#=============================================================================#
 def pickRelation():
     #ask user to choose a relation R
     # GET TABLE NAMES                                                                            
@@ -380,25 +401,45 @@ def pickRelation():
                 table.append(splitname[1])
     print 'All relations: ', table
     
-    # prompt user to pick a relation
-    relation_num = raw_input('Pick a table by entering its number: ')
-    return relation_num
+    while True:
+        # prompt user to pick a relation
+        relation_num = raw_input('Pick a table by entering its number: ')
+        
+        #check if they picked a valid number
+        s = 'R'+relation_num
+        exist = False
+        for item in table:
+            if s == item:
+                exist = True
+        if exist:
+            return relation_num
+        else:
+            print 'Relation does not exist! Pick again'
+    
     
 ############################
 #         MAIN             #
 ############################  
 
+#db = raw_input('HELLO! Please enter the database name: ')
+#conn = sqlite3.connet(db)
+
+#for testing only, delete this before we submit
+conn = sqlite3.connect('MiniProject2-InputExample.db')
+
+c = conn.cursor()
+
 #ask user to pick relation
-relation = pickRelation()
+#relation = pickRelation()
 
 # spits the fd into 2 lists
-L,R = getRelationalSchema(relation)
+#L,R = getRelationalSchema(relation)
 
 #get minimal cover of FDs
 #getMinimalCover(L,R)
-TNF, LH, RH = third_normal(L, R)
-output_schema(LH, RH, relation)
-output_FD(LH, RH, relation) 
+#TNF, LH, RH = third_normal(L, R)
+#output_schema(LH, RH, relation)
+#output_FD(LH, RH, relation) 
 
 # prompt user to pick an action:
 # 1.3NF
@@ -407,7 +448,7 @@ output_FD(LH, RH, relation)
 # 4.Check equivalency F1 and F2. Get minimal cover of F1 and F2 and see if they are the same??
 while True:
     
-    print "Available Operations: \n[1] 3NF\n[2] BCNF\n[3] Get Closure\n[4] Check Equivalency"
+    print "Available Operations: \n[1] 3NF\n[2] BCNF\n[3] Get Closure\n[4] Check Equivalency of F1 and F2"
     op = raw_input("Please enter an operation or 'quit' to quit: ").lower()
     
     if op == '1':
@@ -418,15 +459,20 @@ while True:
         L,R = getRelationalSchema(relation)     
         
         #get 3NF
-        threeNF,LHS,RHS = third_normal(L,R)
+        TNF,LH,RH = third_normal(L,R)
         
+        #
+        output_schema(LH, RH, relation)
+        output_FD(LH, RH, relation)         
+        
+    elif op == '2':
         pass
-    if op == '2':
-        pass
-    if op == '3':
+    elif op == '3':
         #get attribute set and tables
         a=raw_input("Enter attribute set: ").upper()
+        print
         a_set = set()
+        
         for letter in a:
             a_set.add(letter)
         t=raw_input("Enter table numbers in the format '1,2,4': ")
@@ -439,15 +485,50 @@ while True:
             table_l, table_r = getRelationalSchema(table)
             l+=table_l
             r+=table_r
-        print l
-        print r
+        #print 'lhs',l
+        #print 'rhs',r
+        
+        #convert lhs and rhs into singleton list of sets
+        sl,sr = getSingleton(l,r)
+        #print 'singleton l',sl
+        #print 'singleton r',sr
 
         #get closure of F
-        #closure = getClosure(a_set, l,r)
+        closure = getClosure(a_set, sl,sr)
+        print '==================================================================='
+        print 'Closure of '+a+' with relation(s) '+ t+':' , list(closure)
+        print '==================================================================='
         
+   
+    elif op == '4':
+        #prompt user to pick 2 tables
+        print 'Pick F1'
+        f1 = pickRelation()
         
+        print 'Pick F2'
+        f2 = pickRelation()
         
-    if op == '4':
-        pass
-    if op == 'quit':
+        #get min cover of F1, get min cover of F2
+        F1L,F1R = getRelationalSchema(f1)
+        F2L,F2R = getRelationalSchema(f2)
+        F1 = getMinimalCover(F1L,F1R)
+        F2 = getMinimalCover(F2L,F2R)
+        
+        #compare the 2 min covers and see if they are the same!
+        equivalent = True
+        for item in F1:
+            if item not in F2:
+                equivalent = False
+        if equivalent:
+            print 'Equivalent!'
+        else:
+            print 'Not equivalent!'
+    
+        
+    elif op == 'quit':
         break
+    else:
+        print 'Invalid operation.'
+        print 'Try again.'
+        print
+        print
