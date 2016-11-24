@@ -20,6 +20,7 @@ class relations:
         print "keys:", self.keys
         print "Functional Dependancies:"
         self.printFDs()
+        print '-'*80
 
     def add_FDs(self, LH, RH): # makes things easier in BCNF
         for i in range(len(LH)):
@@ -454,10 +455,6 @@ def third_normal(LH, RH, f):
         decomp[-1].attributes = set(key)
         decomp[-1].keys = set(key)
 
-    # to check. remove later!
-    for rel in decomp:
-        rel.print_rel()
-
     return decomp
 
 #==============================================================================#
@@ -468,7 +465,7 @@ def third_normal(LH, RH, f):
 #          - whether decomposition is dependency preserving (True or False).
 #==============================================================================#
 def bcnf(LH, RH, f):
-    v = check_bcnf(LHCopy,RHCopy,f) #check if any FDs violate BCNF
+    v = check_bcnf(LH,RH,f) #check if any FDs violate BCNF
 
     current = relations()
     current.add_FDs(LH,RH)
@@ -480,19 +477,18 @@ def bcnf(LH, RH, f):
         decomp.append(relations())
 
         # always chooses the first violating fd found.
-        decomp[-1].key = current[v[0]][0].split() #LHs of violating FD
-        decomp[-1].attributes = set((LHCopy[v[0]] + RHCopy[v[0]]).split())
-        decomp.FDs.append(current[v[0]])
-
-        current.FDs.pop(v[0])
+        decomp[-1].keys = set(current.FDs[v[0]][0]) # LHS of violating FD
+        decomp[-1].attributes = set(''.join(current.FDs[v[0]]))
+        decomp[-1].FDs.append(current.FDs.pop(v[0]))
 
         fRemove = []
 
-        updatedList = list(current.FDs)#removing items while using as loop control will cause errors
+        updatedList = list(current.FDs)#removing items while using as loop control causes errors
 
-        for fd in decomp[-1].FDs[1]:
+        for fd in decomp[-1].FDs:
+            x = fd[1]
             # remove attributes
-            for i in len(fd):
+            for i in x:
                 current.attributes.discard(i)
 
                 # remove FDs where parts of the left are missing
@@ -506,23 +502,29 @@ def bcnf(LH, RH, f):
         current.FDs = updatedList
         updatedList = list()
 
-        violating = check_bcnf(current.FDs[0], current.FDs[1], current.attributes)
+        cLH = [fd[0] for fd in current.FDs]
+        cRH = [fd[1] for fd in current.FDs]
+
+        v = check_bcnf(cLH, cRH, current.attributes)
+
+    if not current.keys: # if there are no keys added (already in bcnf to begin with)
+        if not current.FDs:
+            current.keys = current.attributes # all attributes are keys if there are no FDs
+        else:
+            current.keys = set(find_key(cLH, cRH, current.attributes))
 
     decomp.append(current)
 
     DependPres = checkDependency(decomp, LH, RH) # will add function later.
 
-    for r in decomp: # for debugging
-        r.print_rel()
-
     return decomp, DependPres
-
 
 #==============================================================================#
 # checkDependency(decomp, LH, RH)
 # checks if decomposition is dependency preserving.
 # arguments: Decomp - a list of decomposed relalations. LH, RH: FDs of original schema
 # returns: True or False
+# https://www.youtube.com/watch?v=9PZzyMhQViw
 #==============================================================================#
 # TODO: finish writing
 def checkDependency(decomp, LH, RH):
