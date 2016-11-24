@@ -16,11 +16,7 @@ c = conn.cursor()
 #parameters: relation, is the number the user enters which specifies which table
 #=============================================================================#
 
-<<<<<<< HEAD
-    
-=======
 def getRelationalSchema(relation):
->>>>>>> 527b387fd1cec3676e85eef68f9c0796cb634c97
     table_name = 'Input_R'+relation
     # GET COLUMN NAMES
     sql = "PRAGMA table_info("+table_name+")"
@@ -64,21 +60,21 @@ def getRelationalSchema(relation):
 def getMinimalCover(left, right):
     #step 1: right hand side singleton
     l, r = getSingleton(left, right)
-    print 'singleton'
-    print l
-    print r
+    #print 'singleton'
+    #print l
+    #print r
     print
     
     #step 2: left hand side extraneous attributes
-    step2(l, r) #manipulates l and r
-    print 'LHS extraneous attributes'
-    print 'l',l,'\nr',r
+    newl,newr=step2(l, r) #manipulates l and r
+    print 'Step 2: Removed LHS extraneous attributes'
+    print 'new l',newl,'\nnew r',newr
     print
     
     #step 3: Remove redundant FD's
-    rl,rr = step3(l,r)
+    rl,rr = step3(newl,newr)
     left, right = convert_to_list(rl, rr)
-    print 'remove redundant FDs'
+    print 'Step 3: Removed redundant FDs'
     print left
     print right
     print
@@ -161,9 +157,9 @@ def step2(L_list, R_list):
     for j in range(len(L_list)):
         if len(L_list[j])>1:
             remove_redundancy(L_list[j], R_list[j], L_list, R_list)
-            print '\nl list removed redundancy ',L_list,'\n'
-    print '\nr list removed redundancy', R_list
-    return L_list    
+            #print '\nl list removed redundancy ',L_list,'\n'
+            #print '\nr list removed redundancy', R_list
+    return L_list, R_list   
 
 #=============================================================================#
 # step3
@@ -172,15 +168,22 @@ def step2(L_list, R_list):
 def step3(l_list, r_list):
     reduced_l_list = []
     reduced_r_list = []
+    #print 'reduced l list', reduced_l_list
+    #print 'reduced r list', reduced_r_list
     #removed redundant FDs
     for i in range(len(l_list)):
     #find closure of current FD (exclude current FD)
+        #print 'STEP 3 INDEX ', i
         l_copy = list(l_list)
         r_copy = list(r_list)
-        l_copy.remove(l_list[i])
-        r_copy.remove(r_list[i])
+        #print 'STEP 3 l copy', l_copy
+        #print 'STEP 3 r copy', r_copy        
+        l_copy.pop(i)
+        r_copy.pop(i)
+        #print 'STEP 3 l copy removed 1 fd', l_copy
+        #print 'STEP 3 r copy removed 1 fd', r_copy
         closure = getClosure(l_list[i],l_copy, r_copy)
-        #print "closure of T-",fd,"->",r_list[index],closure
+        #print "closure of T-",l_list[i],"->",r_list[i],closure
         #if RHS of FD is not in the closure, then this FD is not redundant, add it to reduced lists
         if not r_list[i].issubset(closure):
             reduced_l_list.append(l_list[i])
@@ -199,44 +202,45 @@ def remove_redundancy(LHS, RHS, l_list, r_list):
     for letter in LHS_copy:
         attribute = LHS_copy.difference(letter)
         closure = getClosure(attribute, l_list, r_list)
-        print attribute,"closure: ", closure
+        #print attribute,"closure: ", closure
         # save the closures, per attriute
         if RHS.issubset(closure):
-            print "removed", letter
+            #print "removed", letter
             
             LHS.remove(letter)
-            print "remaining", LHS
+            #print "remaining", LHS
             l_list[i] = LHS
 
         
     #print "from remove_redundancy", closure
-<<<<<<< HEAD
     
 #gets closure of a set of attributes
 #atribute is a set {'A','B','C'}
 #l_list is a list of LHS FDs
 #r_list is the corresponding list of RHS FDs
-=======
+
 #=============================================================================#
 # getClosure(attribute, l_list, r_list)
 # finds the closure of attribute
 #=============================================================================#
->>>>>>> 527b387fd1cec3676e85eef68f9c0796cb634c97
 def getClosure(attribute, l_list, r_list):
     #get copies of l and r
-    l_copy = l_list
+    l_copy = list(l_list)
     r_copy = list(r_list)
-    # adds the clos
+
+    # adds the closure
     closure_set = set()
     addtoset(attribute, closure_set)
              
-    f = 0
+
     added=True
     while added == True:
         added = False        
         for f in range(len(l_copy)):
             #print "index", f
-            #print "new closure", closure_set
+            #print "current closure", closure_set
+            #print 'l copy', l_copy
+            #print 'r copy', r_copy            
             if r_copy[f] == '':
                 continue
             elif l_copy[f].issubset(closure_set):
@@ -246,13 +250,10 @@ def getClosure(attribute, l_list, r_list):
                 addtoset(r_copy[f],closure_set)
                 #print "added", closure_set
                 r_copy[f]=''
-                f+=1
+                #f+=1
                 added = True
             else :
-                #print "notsubset"
-                f += 1
-        #print closure_set
-    #print attribute,"closure: ", closure_set
+                continue
     return closure_set
 
 #=============================================================================#
@@ -268,7 +269,7 @@ def addtoset(set1,set2):
 
 #==============================================================================#
 # check_3nf(LH, RH, F)
-# checks if F is in 3nf. First checks if F is in BCNF. If yes, the function will
+# checks if F is already in 3nf. First checks if F is in BCNF. If yes, the function will
 # return True, else, it will check if RH of violating FDs are prime attributes
 # by calling the function find_prime.
 # parameters: LH - left hand side of FDs
@@ -362,29 +363,33 @@ def output_FD(LH, RH, file_num):
     c.execute(drop)
     c.execute(sql)     
               
-                            
+def pickRelation():
+    #ask user to choose a relation R
+    # GET TABLE NAMES                                                                            
+    c.execute("SELECT name FROM sqlite_master;")
+    table_names = c.fetchall()
+    #print table_names                                                                           
+    
+    # 1 list the table names                                                                  
+    table = []
+    for i in range(len(table_names)):
+        for j in range(len(table_names[i])):
+            if fnmatch.fnmatch(str(table_names[i][j]),'Input_R*'):
+                name = str(table_names[i][j])
+                splitname = name.split('_')
+                table.append(splitname[1])
+    print 'All relations: ', table
+    
+    # prompt user to pick a relation
+    relation_num = raw_input('Pick a table by entering its number: ')
+    return relation_num
+    
 ############################
 #         MAIN             #
 ############################  
 
-#ask user to choose a relation R
-# GET TABLE NAMES                                                                            
-c.execute("SELECT name FROM sqlite_master;")
-table_names = c.fetchall()
-#print table_names                                                                           
-
-# 1 list the table names                                                                  
-table = []
-for i in range(len(table_names)):
-    for j in range(len(table_names[i])):
-        if fnmatch.fnmatch(str(table_names[i][j]),'Input_R*'):
-            name = str(table_names[i][j])
-            splitname = name.split('_')
-            table.append(splitname[1])
-print 'All relations: ', table
-
-# prompt user to pick a relation
-relation = raw_input('Pick a table by entering its number: ')
+#ask user to pick relation
+relation = pickRelation()
 
 # spits the fd into 2 lists
 L,R = getRelationalSchema(relation)
@@ -401,10 +406,20 @@ output_FD(LH, RH, relation)
 # 3.Get Closure of an attribute. Have user specify an attribute set, tables(union of these tables as F)
 # 4.Check equivalency F1 and F2. Get minimal cover of F1 and F2 and see if they are the same??
 while True:
+    
     print "Available Operations: \n[1] 3NF\n[2] BCNF\n[3] Get Closure\n[4] Check Equivalency"
     op = raw_input("Please enter an operation or 'quit' to quit: ").lower()
     
     if op == '1':
+        #ask user to pick relation
+        relation = pickRelation()
+        
+        # spits the fd into 2 lists
+        L,R = getRelationalSchema(relation)     
+        
+        #get 3NF
+        threeNF,LHS,RHS = third_normal(L,R)
+        
         pass
     if op == '2':
         pass
@@ -426,8 +441,7 @@ while True:
             r+=table_r
         print l
         print r
-            
-        
+
         #get closure of F
         #closure = getClosure(a_set, l,r)
         
@@ -437,12 +451,3 @@ while True:
         pass
     if op == 'quit':
         break
-    
-
-
-
-
-
-
-    
-
