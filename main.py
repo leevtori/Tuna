@@ -100,9 +100,9 @@ def getMinimalCover(left, right):
     minimal_FD = []
     for i in range(len(left)):
         minimal_FD.append(left[i]+'->'+right[i])
-    print '==================================================================='
-    print 'Minimal Cover', minimal_FD, '\n'
-    print '==================================================================='
+    # print '==================================================================='
+    # print 'Minimal Cover', minimal_FD, '\n'
+    # print '==================================================================='
 
     return minimal_FD
 
@@ -317,6 +317,13 @@ def addtoset(set1,set2):
 #==============================================================================#
 def findPrime(LH, RH, f):
     keys = find_key(LH,RH,f)
+    minimal = len(keys[0])
+
+    for i in range(1,len(keys)):
+        if len(keys[i]) > minimal:
+            keys = keys[:i]
+            break
+
     prime_attributes = set(''.join(keys))
     return prime_attributes
 
@@ -350,15 +357,9 @@ def find_key(LH, RH, F):
             return keys
 
     for item in powerset(middle):
-        closureX = getClosure(''.join(item) + ''.join(item), LH, RH)
-        if closureX == F:
-            keys.append(''.join(item))
-
-    minimal = len(keys[0])
-
-    for i in range(1,len(keys)):
-        if len(keys[i]) > minimal:
-            return keys[:i]
+        closureX = getClosure(left + ''.join(item), LH, RH)
+        if len(closureX) == len(F):
+            keys.append(left+''.join(item))
 
     return keys
 
@@ -446,11 +447,17 @@ def third_normal(LH, RH, f):
         decomp[-1].FDs.append((item, third_norm[item]))
 
     # ensure losslessness:
-    if not checkDependency(decomp, LH,  RH, f):
-        key = find_key(LH,RH, f) # will add the first key it finds into the relation
+    found = 0
+    keys = find_key(LH,RH,f)
+    for item in LHCopy:
+        if item in keys:
+            found = 1
+            break
+
+    if not checkDependency(decomp, LH,  RH, f) or not found:
         decomp.append(relations())
-        decomp[-1].attributes = set(key)
-        decomp[-1].keys = set(key)
+        decomp[-1].attributes = set(keys[0])
+        decomp[-1].keys = set(keys[0])
 
     return decomp
 
@@ -559,7 +566,6 @@ def checkDependency(decomp, LH, RH, R):
                     return False
                 if dFCR[j] == setRH:
                     found  = True
-                    print dFCL[j] , dFCR[j]
                 else:
                     j += 1
         else: # LHS of FD is not in closure
