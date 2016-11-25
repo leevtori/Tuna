@@ -642,12 +642,12 @@ def pickRelation():
 #         MAIN             #
 ############################
 
-#db = raw_input('HELLO! Please enter the database name: ')
-#conn = sqlite3.connet(db)
+db = raw_input('HELLO! Please enter the database name: ')
+conn = sqlite3.connet(db)
 
 #NOTE: Remove later
 #for testing only, delete this before we submit
-conn = sqlite3.connect('MiniProject2-InputExample.db')
+#conn = sqlite3.connect('MiniProject2-InputExample.db')
 
 c = conn.cursor()
 
