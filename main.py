@@ -4,6 +4,7 @@ import fnmatch
 from collections import OrderedDict
 from itertools import chain, combinations
 import re
+import sys
 
 #==============================================================================#
 # A class to hold the relations.
@@ -642,12 +643,15 @@ def pickRelation():
 #         MAIN             #
 ############################
 
+#open db. If db doesn't exist, exit program.
 db = raw_input('HELLO! Please enter the database name: ')
-conn = sqlite3.connet(db)
 
-#NOTE: Remove later
-#for testing only, delete this before we submit
-#conn = sqlite3.connect('MiniProject2-InputExample.db')
+try:
+    open(db,'r')
+except IOError:
+    sys.exit('Database not found!')
+    
+conn = sqlite3.connect(db)
 
 c = conn.cursor()
 
@@ -655,7 +659,7 @@ c = conn.cursor()
 # 1.3NF
 # 2.BCNF
 # 3.Get Closure of an attribute. Have user specify an attribute set, tables(union of these tables as F)
-# 4.Check equivalency F1 and F2. Get minimal cover of F1 and F2 and see if they are the same??
+# 4.Check equivalency F1 and F2. Get minimal cover of F1 and F2 and see if they are the same
 while True:
 
     print "Available Operations: \n[1] 3NF\n[2] BCNF\n[3] Get Closure\n[4] Check Equivalency of F1 and F2"
@@ -679,9 +683,11 @@ while True:
         while (change != 'y' and change != 'n'): 
             change = raw_input("Do you want to add output to the database? (y/n): ")
         if change == 'y':
+            print 'Adding tables ...'
             output_schema(all_relations, table_num, col_names, col_types)
             output_FD(all_relations, table_num)
             conn.commit()
+            print 'Done.'
         else:
             print "You database was not changed."
         print '==================================================================='
@@ -697,6 +703,9 @@ while True:
         #get BCNF
         all_relations, depen_pres = bcnf(L,R, col_names)
         print '==================================================================='
+        for r in all_relations:
+                    r.print_rel()   
+                    
         if depen_pres:
             print 'Decomposition of R'+table_num+' is dependency preserving.'
         else:
@@ -707,9 +716,11 @@ while True:
         while (change != 'y' and change != 'n'): 
             change = raw_input("Do you want to add output to the database? (y/n): ")
         if change == 'y':
+            print 'Adding tables ...'
             output_schema(all_relations, table_num, col_names, col_types)
             output_FD(all_relations, table_num)
             conn.commit()
+            print 'Done.'
         else:
             print "You database was not changed."
         print '==================================================================='
@@ -756,7 +767,7 @@ while True:
         closure = getClosure(a_set, sl,sr)
         
         print '==================================================================='
-        print 'Closure of '+a+' with FDs of relation(s) '+ t+':' , list(closure)
+        print 'Closure of '+a+' using FDs of relation(s) '+ t+':' , list(closure)
         print '==================================================================='
 
 
@@ -769,8 +780,8 @@ while True:
         f2 = pickRelation()
 
         #get min cover of F1, get min cover of F2
-        F1L,F1R = getRelationalSchema(f1)
-        F2L,F2R = getRelationalSchema(f2)
+        F1L,F1R,_,_ = getRelationalSchema(f1)
+        F2L,F2R,_,_ = getRelationalSchema(f2)
         F1 = getMinimalCover(F1L,F1R)
         F2 = getMinimalCover(F2L,F2R)
 
@@ -779,16 +790,16 @@ while True:
         for item in F1:
             if item not in F2:
                 equivalent = False
+                
         print '==================================================================='
-
         if equivalent:
             print 'Equivalent!'
         else:
             print 'Not equivalent!'
         print '==================================================================='
 
-
     elif op == 'quit':
+        print 'GOOD BYE!'
         break
     else:
         print 'Invalid operation.'
