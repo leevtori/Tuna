@@ -184,7 +184,42 @@ def step2(L_list, R_list):
     for j in range(len(L_list)):
         if len(L_list[j])>1:
             remove_redundancy(L_list[j], R_list[j], L_list, R_list)
-    return L_list, R_list
+
+            
+    l, r = convert_to_list(L_list, R_list)
+    test = []
+    for i in range(len(l)):
+        test.append(l[i]+'->'+r[i])
+   
+    # to remove duplicate FD's, incase there are only 2 and they are the same  
+    test = set(test)
+  
+    # turn in back into sets, for the parameters of rest of min cover
+    test = list(test)
+    
+    l_list = []
+    r_list = []    
+    #list = []
+    for i in range(len(test)):
+        split = test[i].split('->')
+        l_list.append(split[0])
+        r_list.append(split[1])
+        
+    for j in range(len(l_list)):
+            s = set()
+            for letter in l_list[j]:
+                s.add(letter)
+            l_list[j] = s
+            sr = set()
+            for l in r_list[j]:
+                sr.add(l)
+            r_list[j]= sr
+        
+       
+    #print l_list 
+    #print r_list
+    return l_list, r_list
+    
 
 #=============================================================================#
 # step3
@@ -806,5 +841,6 @@ while True:
         print 'Try again.'
         print
         print
+        
 
 conn.close()
