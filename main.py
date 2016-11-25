@@ -100,9 +100,9 @@ def getMinimalCover(left, right):
     minimal_FD = []
     for i in range(len(left)):
         minimal_FD.append(left[i]+'->'+right[i])
-    #print '==================================================================='
-    #print 'Minimal Cover', minimal_FD, '\n'
-    #print '==================================================================='
+    print '==================================================================='
+    print 'Minimal Cover', minimal_FD, '\n'
+    print '==================================================================='
 
     return minimal_FD
 
@@ -185,26 +185,26 @@ def step2(L_list, R_list):
         if len(L_list[j])>1:
             remove_redundancy(L_list[j], R_list[j], L_list, R_list)
 
-            
+
     l, r = convert_to_list(L_list, R_list)
     test = []
     for i in range(len(l)):
         test.append(l[i]+'->'+r[i])
-   
-    # to remove duplicate FD's, incase there are only 2 and they are the same  
+
+    # to remove duplicate FD's, incase there are only 2 and they are the same
     test = set(test)
-  
+
     # turn in back into sets, for the parameters of rest of min cover
     test = list(test)
-    
+
     l_list = []
-    r_list = []    
+    r_list = []
     #list = []
     for i in range(len(test)):
         split = test[i].split('->')
         l_list.append(split[0])
         r_list.append(split[1])
-        
+
     for j in range(len(l_list)):
             s = set()
             for letter in l_list[j]:
@@ -214,12 +214,12 @@ def step2(L_list, R_list):
             for l in r_list[j]:
                 sr.add(l)
             r_list[j]= sr
-        
-       
-    #print l_list 
+
+
+    #print l_list
     #print r_list
     return l_list, r_list
-    
+
 
 #=============================================================================#
 # step3
@@ -349,15 +349,10 @@ def find_key(LH, RH, F):
             keys.append(left)
             return keys
 
-    middle.add(left)
-
     for item in powerset(middle):
-        if not item or left not in item:
-            continue
-
-        closureX = getClosure(''.join(item), LH, RH)
+        closureX = getClosure(''.join(item) + ''.join(item), LH, RH)
         if closureX == F:
-            keys.append(''.join(i))
+            keys.append(''.join(item))
 
     minimal = len(keys[0])
 
@@ -370,7 +365,7 @@ def find_key(LH, RH, F):
 # function from https://docs.python.org/2/library/itertools.html
 def powerset(iterable):
     s = list(iterable)
-    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+    return chain.from_iterable(combinations(s, r) for r in range(1,len(s)+1))
 
 #==============================================================================#
 # check_bcnf(LH, RH, F)
@@ -537,28 +532,60 @@ def checkDependency(decomp, LH, RH, R):
     decompLH = []
     decompRH = []
 
-
     # convert form.
     for r in decomp:
         for fd in r.FDs:
             decompLH.append(fd[0])
             decompRH.append(fd[1])
 
+    if len(decompLH) == 0: # if there are no FDs.
+        return False
+
     #check if all FDs of R are in decomp
     if decompLH == LH and decompRH == RH:
         return True
 
     # if not, check decomp+
-    closureDecomp = set()
-    for i in range(len(decompLH)):
-        closureDecomp = closureDecomp | getClosure(decompLH[i], decompRH[i], R)
+    dFCL, dFCR = FClosure(decompLH,decompRH, R)
 
     for i in range(len(LH)):
-        setFD = set(LH[i]+RH[i])
-        if setFD & closureDecomp != setFD:
+        setLH = tuple(LH[i])
+        setRH = tuple(RH[i])
+        if setLH in dFCL:
+            j = dFCL.index(setLH)
+            found = False
+            while not found:
+                if dFCL[j] != setLH:
+                    return False
+                if dFCR[j] == setRH:
+                    found  = True
+                    print dFCL[j] , dFCR[j]
+                else:
+                    j += 1
+        else: # LHS of FD is not in closure
             return False
 
     return True
+
+#==============================================================================#
+# FClosure(LH,RH,R)
+# Finds the closure of a set of functional depenencies.
+# arguments: same as everything else.
+# return: FCloseLH, FCloseRH - left and right sides F+
+#==============================================================================#
+def FClosure(LH,RH,R):
+    FCloseLH = []
+    FCloseRH = []
+    avail = set(''.join(LH+RH))
+    R = set(R) & avail
+    for item in powerset(R):
+        fclose = getClosure(item, LH, RH)
+        for comb in powerset(fclose):
+            FCloseLH.append(item)
+            FCloseRH.append(comb)
+
+    return FCloseLH, FCloseRH
+
 #=============================================================================#
 # output_schema
 # creates a view of the output of the normalized data
@@ -685,7 +712,7 @@ try:
     open(db,'r')
 except IOError:
     sys.exit('Database not found!')
-    
+
 conn = sqlite3.connect(db)
 
 c = conn.cursor()
@@ -712,10 +739,10 @@ while True:
         print '==================================================================='
         for r in all_relations:
             r.print_rel()
-        
+
         # The output data in its proper format
         change = ''
-        while (change != 'y' and change != 'n'): 
+        while (change != 'y' and change != 'n'):
             change = raw_input("Do you want to add output to the database? (y/n): ")
         if change == 'y':
             print 'Adding tables ...'
@@ -727,20 +754,20 @@ while True:
             print "You database was not changed."
         print '==================================================================='
 
-            
+
     elif op == '2': #BCNF
         #ask user to pick relation ***relation here means: table number***
         table_num = pickRelation()
-    
+
         # spits the fd into 2 lists
         L,R, col_names, col_types = getRelationalSchema(table_num)
-    
+
         #get BCNF
         all_relations, depen_pres = bcnf(L,R, col_names)
         print '==================================================================='
         for r in all_relations:
-                    r.print_rel()   
-                    
+                    r.print_rel()
+
         if depen_pres:
             print 'Decomposition of R'+table_num+' is dependency preserving.'
         else:
@@ -748,7 +775,7 @@ while True:
         # The output data in its proper format
         print
         change = ''
-        while (change != 'y' and change != 'n'): 
+        while (change != 'y' and change != 'n'):
             change = raw_input("Do you want to add output to the database? (y/n): ")
         if change == 'y':
             print 'Adding tables ...'
@@ -760,7 +787,7 @@ while True:
             print "You database was not changed."
         print '==================================================================='
 
-        
+
     elif op == '3':
         #get attribute set and tables
         a=raw_input("Enter attribute set: ").upper()
@@ -773,7 +800,7 @@ while True:
         # GET TABLE NAMES
         c.execute("SELECT name FROM sqlite_master;")
         table_names = c.fetchall()
-    
+
         # 1 list the table names
         table = []
         for i in range(len(table_names)):
@@ -782,8 +809,8 @@ while True:
                     name = str(table_names[i][j])
                     splitname = name.split('_')
                     table.append(splitname[1])
-        print 'All relations: ', table      
-            
+        print 'All relations: ', table
+
         t=raw_input("Enter table numbers in the format '1,2,4': ")
         tables = t.split(',')
 
@@ -800,7 +827,7 @@ while True:
 
         #get closure of F
         closure = getClosure(a_set, sl,sr)
-        
+
         print '==================================================================='
         print 'Closure of '+a+' using FDs of relation(s) '+ t+':' , list(closure)
         print '==================================================================='
@@ -825,7 +852,7 @@ while True:
         for item in F1:
             if item not in F2:
                 equivalent = False
-                
+
         print '==================================================================='
         if equivalent:
             print 'Equivalent!'
@@ -841,6 +868,6 @@ while True:
         print 'Try again.'
         print
         print
-        
+
 
 conn.close()
